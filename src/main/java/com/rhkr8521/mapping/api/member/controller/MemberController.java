@@ -20,7 +20,7 @@ import java.util.Map;
 @Tag(name = "Member", description = "Member 관련 API 입니다.")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/member")
+@RequestMapping("/api/v2/member")
 public class MemberController {
 
     private final MemberService memberService;
