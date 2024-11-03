@@ -24,6 +24,7 @@ public enum SuccessStatus {
     GET_USERINFO_SUCCESS(HttpStatus.OK,"사용자 정보 조회 성공"),
 
     SEND_TOTAL_MEMO_SUCCESS(HttpStatus.OK, "전체 메모 발송 성공"),
+    SEND_MEMO_DETAIL_SUCCESS(HttpStatus.OK, "메모 상세 조회 성공"),
 
     /**
      * 201
