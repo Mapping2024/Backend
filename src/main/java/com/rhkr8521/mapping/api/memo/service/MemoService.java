@@ -74,24 +74,7 @@ public class MemoService {
 
     // 전체 메모 조회
     public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km) {
-
-        // Haversine formula를 사용하여 특정 반경 내 메모를 조회
-        double earthRadiusKm = 6371.0;
-
-        List<Memo> memos = memoRepository.findAll().stream()
-                .filter(memo -> {
-                    double dLat = Math.toRadians(memo.getLat() - lat);
-                    double dLng = Math.toRadians(memo.getLng() - lng);
-
-                    double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                            Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(memo.getLat())) *
-                                    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-                    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-                    double distance = earthRadiusKm * c;
-                    return distance <= km;
-                })
-                .collect(Collectors.toList());
+        List<Memo> memos = memoRepository.findMemosWithinRadius(lat, lng, km);
 
         return memos.stream()
                 .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory()))
