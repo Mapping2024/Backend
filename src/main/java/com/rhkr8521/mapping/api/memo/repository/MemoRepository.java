@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface MemoRepository extends JpaRepository<Memo, Long> {
 
-    @Query(value = "SELECT * FROM MEMO m " +
+    @Query(value = "SELECT * FROM memo m " +
             "WHERE (6371 * acos(cos(radians(:lat)) * cos(radians(m.lat)) * " +
             "cos(radians(m.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(m.lat)))) <= :km",
             nativeQuery = true)
