@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Entity
-@Table(name = "MEMO")
+@Table(name = "memo")
 @Builder
 public class Memo extends BaseTimeEntity {
 
