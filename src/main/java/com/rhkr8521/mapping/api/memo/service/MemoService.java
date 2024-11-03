@@ -40,6 +40,8 @@ public class MemoService {
                 .lat(memoRequest.getLat())
                 .lng(memoRequest.getLng())
                 .category(memoRequest.getCategory())
+                .likeCnt(0)
+                .hateCnt(0)
                 .ip(clientIp)
                 .build();
 

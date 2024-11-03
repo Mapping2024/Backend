@@ -26,6 +26,8 @@ public class Memo extends BaseTimeEntity {
     private String lat;
     private String lng;
     private String category;
+    private long likeCnt;
+    private long hateCnt;
     private String ip;
 
     @ManyToOne(fetch = FetchType.LAZY)
