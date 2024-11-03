@@ -6,7 +6,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "MEMO_IMAGE")
+@Table(name = "memo_image")
 public class MemoImage {
 
     @Id

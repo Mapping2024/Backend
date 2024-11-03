@@ -13,7 +13,7 @@ import java.util.Collections;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Builder(toBuilder = true)  // toBuilder 옵션을 사용하여 기존 객체를 복사하는 빌더 생성 가능
-@Table(name = "MEMBER")
+@Table(name = "member")
 @AllArgsConstructor
 public class Member extends BaseTimeEntity implements UserDetails{
 
