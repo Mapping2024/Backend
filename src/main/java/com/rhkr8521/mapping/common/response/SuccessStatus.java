@@ -23,6 +23,8 @@ public enum SuccessStatus {
     DELETE_MEMBER_SUCCESS(HttpStatus.OK, "회원 탈퇴 성공"),
     GET_USERINFO_SUCCESS(HttpStatus.OK,"사용자 정보 조회 성공"),
 
+    SEND_TOTAL_MEMO_SUCCESS(HttpStatus.OK, "전체 메모 발송 성공"),
+
     /**
      * 201
      */

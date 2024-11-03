@@ -23,8 +23,8 @@ public class Memo extends BaseTimeEntity {
 
     private String title;
     private String content;
-    private String lat;
-    private String lng;
+    private double lat;
+    private double lng;
     private String category;
     private long likeCnt;
     private long hateCnt;

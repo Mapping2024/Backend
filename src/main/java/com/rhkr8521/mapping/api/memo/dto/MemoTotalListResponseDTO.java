@@ -1,18 +1,14 @@
 package com.rhkr8521.mapping.api.memo.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemoCreateRequestDTO {
+public class MemoTotalListResponseDTO {
+    private Long id;
     private String title;
-    private String content;
-    private double lat;
-    private double lng;
     private String category;
 }
