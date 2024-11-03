@@ -2,6 +2,7 @@ package com.rhkr8521.mapping.api.memo.controller;
 
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
+import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
 import com.rhkr8521.mapping.api.memo.service.MemoService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.response.ApiResponse;
@@ -45,8 +46,8 @@ public class MemoController {
     public ResponseEntity<ApiResponse<Void>> createMemo(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
-            @RequestParam("lat") String lat,
-            @RequestParam("lng") String lng,
+            @RequestParam("lat") double lat,
+            @RequestParam("lng") double lng,
             @RequestParam("category") String category,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
@@ -55,8 +56,6 @@ public class MemoController {
         // 필수 입력 값 누락 체크
         if (isNullOrEmpty(title) ||
                 isNullOrEmpty(content) ||
-                isNullOrEmpty(lat) ||
-                isNullOrEmpty(lng) ||
                 isNullOrEmpty(category)) {
             throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
         }
@@ -82,6 +81,25 @@ public class MemoController {
 
         memoService.createMemo(userId, memoCreateRequestDTO, images, request);
         return ApiResponse.success_only(SuccessStatus.CREATE_MEMO_SUCCESS);
+    }
+
+    @Operation(
+            summary = "전체 메모 조회 API",
+            description = "현재 위치 위도와 경도를 기준으로 km 반경 내의 메모를 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 에러")
+    })
+    @GetMapping("/total")
+    public ResponseEntity<ApiResponse<List<MemoTotalListResponseDTO>>> getMemosWithinRadius(
+            @RequestParam("lat") double lat,
+            @RequestParam("lng") double lng,
+            @RequestParam("km") double km) {
+
+        List<MemoTotalListResponseDTO> memos = memoService.getMemosWithinRadius(lat, lng, km);
+        return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
     }
 
     private boolean isImageFile(MultipartFile file) {

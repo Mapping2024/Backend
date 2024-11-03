@@ -4,6 +4,7 @@ import com.rhkr8521.mapping.api.aws.s3.S3Service;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
+import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,5 +70,31 @@ public class MemoService {
             clientIp = request.getRemoteAddr();
         }
         return clientIp;
+    }
+
+    // 전체 메모 조회
+    public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km) {
+
+        // Haversine formula를 사용하여 특정 반경 내 메모를 조회
+        double earthRadiusKm = 6371.0;
+
+        List<Memo> memos = memoRepository.findAll().stream()
+                .filter(memo -> {
+                    double dLat = Math.toRadians(memo.getLat() - lat);
+                    double dLng = Math.toRadians(memo.getLng() - lng);
+
+                    double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                            Math.cos(Math.toRadians(lat)) * Math.cos(Math.toRadians(memo.getLat())) *
+                                    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                    double distance = earthRadiusKm * c;
+                    return distance <= km;
+                })
+                .collect(Collectors.toList());
+
+        return memos.stream()
+                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory()))
+                .collect(Collectors.toList());
     }
 }
