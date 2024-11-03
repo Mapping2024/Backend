@@ -39,8 +39,7 @@ public class MemoController {
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "매모 생성 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = ""),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
     })
     @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> createMemo(
@@ -89,14 +88,18 @@ public class MemoController {
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 에러")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
     })
     @GetMapping("/total")
     public ResponseEntity<ApiResponse<List<MemoTotalListResponseDTO>>> getMemosWithinRadius(
-            @RequestParam("lat") double lat,
-            @RequestParam("lng") double lng,
-            @RequestParam("km") double km) {
+            @RequestParam("lat") Double lat,
+            @RequestParam("lng") Double lng,
+            @RequestParam("km") Double km) {
+
+        // 필수 입력 값 누락 체크
+        if (lat == null || lng == null || km == null) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
+        }
 
         List<MemoTotalListResponseDTO> memos = memoService.getMemosWithinRadius(lat, lng, km);
         return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
