@@ -37,6 +37,12 @@ jobs:
       run: |
         mkdir -p src/main/resources
         echo "${{ secrets.APPLICATION_OAUTH2_YML }}" > src/main/resources/application-oauth.yml
+
+    # 2-4. application-aws.yml 파일 생성
+    - name: Create application-aws.yml
+      run: |
+        mkdir -p src/main/resources
+        echo "${{ secrets.APPLICATION_AWS_YML }}" > src/main/resources/application-aws.yml
         
     # 3. Gradle 설정
     - name: Setup Gradle
