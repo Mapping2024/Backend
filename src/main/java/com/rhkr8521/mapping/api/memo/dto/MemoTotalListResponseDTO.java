@@ -11,4 +11,6 @@ public class MemoTotalListResponseDTO {
     private Long id;
     private String title;
     private String category;
+    private double lat;
+    private double lng;
 }

@@ -82,7 +82,7 @@ public class MemoService {
         List<Memo> memos = memoRepository.findMemosWithinRadius(lat, lng, km);
 
         return memos.stream()
-                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory()))
+                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng()))
                 .collect(Collectors.toList());
     }
 
