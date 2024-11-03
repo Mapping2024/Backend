@@ -2,6 +2,7 @@ package com.rhkr8521.mapping.api.memo.controller;
 
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
+import com.rhkr8521.mapping.api.memo.dto.MemoDetailResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
 import com.rhkr8521.mapping.api.memo.service.MemoService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
@@ -103,6 +104,29 @@ public class MemoController {
 
         List<MemoTotalListResponseDTO> memos = memoService.getMemosWithinRadius(lat, lng, km);
         return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
+    }
+
+    @Operation(
+            summary = "메모 상세 조회 API",
+            description = "특정 메모의 상세 정보를 조회합니다. / 비 로그인 상태이면 토큰을 안넘기고, 로그인상태이면 엑세스토큰을 넘겨줘야합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 상세 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
+    })
+    @GetMapping("/detail")
+    public ResponseEntity<ApiResponse<MemoDetailResponseDTO>> getMemoDetail(
+            @RequestParam Long memoId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // 필수 입력 값 누락 체크
+        if (memoId == null) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
+        }
+
+        MemoDetailResponseDTO memoDetail = memoService.getMemoDetail(memoId, userDetails);
+        return ApiResponse.success(SuccessStatus.SEND_MEMO_DETAIL_SUCCESS, memoDetail);
     }
 
     private boolean isImageFile(MultipartFile file) {
