@@ -74,4 +74,14 @@ public class MemberService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
         return member.getId();
     }
+
+    @Transactional
+    public void changeNickname(Long userId, String nickname) {
+        // 유저 조회 및 닉네임 변경 로직
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        Member updatedMember = member.updateNickname(nickname);
+        memberRepository.save(updatedMember); // Member 객체 반환
+    }
 }

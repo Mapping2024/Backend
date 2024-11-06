@@ -16,6 +16,7 @@ public enum ErrorStatus {
     VALIDATION_CONTENT_MISSING_EXCEPTION(HttpStatus.BAD_REQUEST, "필수 정보가 입력되지 않았습니다."),
     MISSING_KAKAO_ACCESSTOKEN(HttpStatus.BAD_REQUEST, "카카오 엑세스토큰이 입력되지 않았습니다."),
     MISSING_REFRESHTOKEN(HttpStatus.BAD_REQUEST, "리프레시토큰이 입력되지 않았습니다."),
+    MISSING_NICKNAME(HttpStatus.BAD_REQUEST,"닉네임이 입려되지 않았습니다."),
     NOT_ALLOW_NICKNAME_FILTER_UNDER_10(HttpStatus.BAD_REQUEST, "닉네임은 10자 이하로 설정해야 합니다."),
     NOT_ALLOW_USERTAG_FILTER_ROLE(HttpStatus.BAD_REQUEST, "닉네임은 영문, 숫자, 한글만 사용할 수 있습니다."),
     NOT_ALLOW_USERTAG_FILTER_LIST(HttpStatus.BAD_REQUEST, "부적절한 닉네임입니다."),
