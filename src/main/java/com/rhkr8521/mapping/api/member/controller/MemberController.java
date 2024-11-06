@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -80,5 +82,27 @@ public class MemberController {
         }
 
         return ApiResponse.success_only(SuccessStatus.SEND_REISSUE_TOKEN_SUCCESS);
+    }
+
+    @Operation(
+            summary = "닉네임 변경 API",
+            description = "사용자의 닉네임을 변경합니다. (닉네임 필터 조건 : 닉네임은 10자 이하로 설정, 닉네임은 영문, 숫자, 한글만 사용가능, 현재 다른 사용자가 사용중인 닉네임은 사용 불가)"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "닉네임 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "닉네임이 입려되지 않았습니다."),
+    })
+    @PatchMapping("/modify-nickname")
+    public ResponseEntity<ApiResponse<Void>> changeNickname(@AuthenticationPrincipal UserDetails userDetails,
+                                                            @RequestParam("nickname") String nickname) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+
+        // 닉네임이 입력되지 않았을 경우 예외 처리
+        if (nickname == null || nickname.isEmpty()) {
+            throw new BadRequestException(ErrorStatus.MISSING_NICKNAME.getMessage());
+        }
+
+        memberService.changeNickname(userId, nickname);
+        return ApiResponse.success_only(SuccessStatus.UPDATE_NICKNAME_SUCCESS);
     }
 }
