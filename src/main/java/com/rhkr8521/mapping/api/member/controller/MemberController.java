@@ -5,6 +5,7 @@ import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.member.service.OAuthService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
+import com.rhkr8521.mapping.common.exception.InternalServerException;
 import com.rhkr8521.mapping.common.response.ApiResponse;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import com.rhkr8521.mapping.common.response.SuccessStatus;
@@ -12,11 +13,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Tag(name = "Member", description = "Member 관련 API 입니다.")
@@ -104,5 +108,48 @@ public class MemberController {
 
         memberService.changeNickname(userId, nickname);
         return ApiResponse.success_only(SuccessStatus.UPDATE_NICKNAME_SUCCESS);
+    }
+
+    @Operation(
+            summary = "프로필 사진 변경 API",
+            description = "사용자의 프로필 사진을 변경합니다. with MultipartFile"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "프로필 사진 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "수정할 프로필 이미지파일이 업로드 되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "프로필 사진이 변경되지 않았습니다.")
+    })
+    @PatchMapping(value = "/modify-profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> changeProfileImage(@AuthenticationPrincipal UserDetails userDetails,
+                                                                @RequestParam("image") MultipartFile image) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+
+        // 이미지 파일 검증
+        if (image != null && !image.isEmpty()) {
+            if (!isImageFile(image)) {
+                throw new BadRequestException(ErrorStatus.NOT_ALLOW_IMG_MIME.getMessage());
+            }
+        }else{
+            throw new BadRequestException(ErrorStatus.MISSING_UPLOAD_IMAGE.getMessage());
+        }
+
+        try {
+            memberService.updateProfileImage(userId, image);
+            return ApiResponse.success_only(SuccessStatus.UPDATE_PROFILE_IMAGE_SUCCESS);
+        } catch (IOException e) {
+            throw new InternalServerException(ErrorStatus.FAIL_UPLOAD_PROFILE_IMAGE.getMessage());
+        }
+    }
+
+    private boolean isImageFile(MultipartFile file) {
+        // 허용되는 이미지 MIME 타입
+        String contentType = file.getContentType();
+        return contentType != null && (
+                contentType.equals("image/jpeg") ||
+                        contentType.equals("image/png") ||
+                        contentType.equals("image/jpg") ||
+                        contentType.equals("image/bmp") ||
+                        contentType.equals("image/webp")
+        );
     }
 }

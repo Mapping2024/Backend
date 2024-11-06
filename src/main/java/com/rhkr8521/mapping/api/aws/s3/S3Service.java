@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.core.sync.RequestBody;
 
 import java.io.IOException;
@@ -61,5 +62,42 @@ public class S3Service {
         }
 
         return imageUrls;
+    }
+
+    public String uploadProfileImage(String email, MultipartFile file) throws IOException {
+        String dir = "profile-images";
+        // 현재 날짜와 시간 가져오기
+        String currentDateTime = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss").format(new Date());
+        // 파일 확장자 추출
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        // 이메일 + 현재날짜 + 현재시간 + 확장자 형식으로 파일 이름 설정
+        String fileName = email + "_" + currentDateTime + extension;
+        // 난수 문자열 생성 (예: 16자 길이)
+        String randomString = RandomStringUtils.randomAlphanumeric(16);
+        // 파일 경로에 난수 문자열 포함
+        String fileKey = dir + "/" + randomString + "/" + fileName;
+        // 파일 업로드 시 퍼블릭 읽기 권한을 추가
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileKey)
+                .acl("public-read")
+                .build();
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        return domain + "/" + fileKey;
+    }
+
+    public void deleteFile(String imageUrl) {
+        if (imageUrl != null && imageUrl.startsWith(domain)) {
+            String fileKey = imageUrl.replace(domain + "/", "");
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(fileKey)
+                    .build();
+            s3Client.deleteObject(deleteObjectRequest);
+        }
     }
 }
