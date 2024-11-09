@@ -7,12 +7,14 @@ import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoDetailResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
+import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.entity.MemoImage;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -112,5 +114,27 @@ public class MemoService {
                 .nickname(memo.getMember().getNickname())
                 .profileImage(memo.getMember().getImageUrl())
                 .build();
+    }
+
+    // 내가 작성한 메모 조회
+    public List<MyMemoListResponseDTO> getMyMemoList(UserDetails userDetails){
+
+        // 현재 사용자 조회
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+
+        // 사용자 작성 메모 조회
+        List<Memo> myMemos = memoRepository.findMemosByMemberId(userId);
+
+        // DTO 변환 및 반환
+        return myMemos.stream()
+                .map(memo -> new MyMemoListResponseDTO(
+                        memo.getId(),
+                        memo.getTitle(),
+                        memo.getContent(),
+                        memo.getCategory(),
+                        memo.getLikeCnt(),
+                        memo.getHateCnt(),
+                        memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList())
+                )).collect(Collectors.toList());
     }
 }

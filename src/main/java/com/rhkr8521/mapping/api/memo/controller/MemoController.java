@@ -4,6 +4,7 @@ import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoDetailResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
+import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
 import com.rhkr8521.mapping.api.memo.service.MemoService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.response.ApiResponse;
@@ -127,6 +128,21 @@ public class MemoController {
 
         MemoDetailResponseDTO memoDetail = memoService.getMemoDetail(memoId, userDetails);
         return ApiResponse.success(SuccessStatus.SEND_MEMO_DETAIL_SUCCESS, memoDetail);
+    }
+
+    @Operation(
+            summary = "내 메모 조회 API",
+            description = "내가 작성한 메모를 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
+    })
+    @GetMapping("/my-memo")
+    public ResponseEntity<ApiResponse<List<MyMemoListResponseDTO>>> getMyMemo(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        List<MyMemoListResponseDTO> myMemoList = memoService.getMyMemoList(userDetails);
+        return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, myMemoList);
     }
 
     private boolean isImageFile(MultipartFile file) {
