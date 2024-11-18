@@ -2,6 +2,7 @@ package com.rhkr8521.mapping.api.member.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
 import com.rhkr8521.mapping.api.member.dto.KakaoUserInfoDTO;
+import com.rhkr8521.mapping.api.member.dto.UserInfoResponseDTO;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.entity.Role;
 import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
@@ -105,4 +106,14 @@ public class MemberService {
         Member updatedMember = member.updateImageUrl(imageUrl);
         memberRepository.save(updatedMember);
     }
+
+    @Transactional(readOnly = true)
+    public UserInfoResponseDTO getUserInfo(Long userId) {
+        // 해당 유저를 찾을 수 없을 경우 예외처리
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        return new UserInfoResponseDTO(member);
+    }
+
 }
