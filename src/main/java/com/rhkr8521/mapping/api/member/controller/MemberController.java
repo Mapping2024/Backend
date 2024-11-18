@@ -141,6 +141,21 @@ public class MemberController {
         }
     }
 
+    @Operation(
+            summary = "사용자 정보 조회 API",
+            description = "토큰을 통해 인증된 사용자의 정보를 반환합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없습니다.")
+    })
+    @GetMapping("/user-info")
+    public ResponseEntity<ApiResponse<UserInfoResponseDTO>> getUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        UserInfoResponseDTO userInfo = memberService.getUserInfo(userId);
+        return ApiResponse.success(SuccessStatus.GET_USERINFO_SUCCESS, userInfo);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();
