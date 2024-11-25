@@ -33,7 +33,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
     private String refreshTokenHeader;
 
     private static final String NO_CHECK_URL = "/oauth2/authorization/kakao"; // 카카오 OAuth 요청 제외
-    private static final String TOKEN_REISSUE_URL = "/api/v1/member/token-reissue"; // 토큰 재발급 엔드포인트
+    private static final String TOKEN_REISSUE_URL = "/api/v2/member/token-reissue"; // 토큰 재발급 엔드포인트
 
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
