@@ -10,12 +10,13 @@ import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.entity.MemoImage;
+import com.rhkr8521.mapping.api.memo.entity.MemoLike;
+import com.rhkr8521.mapping.api.memo.repository.MemoLikeRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,12 +25,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MemoService {
     private final MemoRepository memoRepository;
+    private final MemoLikeRepository memoLikeRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
     private final S3Service s3Service;
@@ -96,9 +99,13 @@ public class MemoService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
         boolean myMemo = false;
+        boolean myLike = false;
         if (userDetails != null) {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
             myMemo = memo.getMember().getId().equals(userId);
+
+            // 해당 메모에 대한 좋아요 여부 확인
+            myLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
         }
 
         List<String> imageUrls = memo.getImages().isEmpty() ? null :
@@ -112,6 +119,7 @@ public class MemoService {
                 .hateCnt(memo.getHateCnt())
                 .images(imageUrls)
                 .myMemo(myMemo)
+                .myLike(myLike)
                 .authorId(memo.getMember().getId())
                 .nickname(memo.getMember().getNickname())
                 .profileImage(memo.getMember().getImageUrl())
@@ -206,5 +214,32 @@ public class MemoService {
         }
 
         memoRepository.save(updatedMemo);
+    }
+
+    // 좋아요 토글
+    public void toggleLike(Long memoId, Long userId) {
+        Memo memo = memoRepository.findById(memoId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
+
+        if (existingLike.isPresent()) {
+            // 이미 좋아요를 눌렀으면 취소
+            memoLikeRepository.delete(existingLike.get());
+            Memo updatedMemo = memo.decreaseLikeCnt();
+            memoRepository.save(updatedMemo);
+        } else {
+            // 좋아요 누름
+            MemoLike memoLike = MemoLike.builder()
+                    .memo(memo)
+                    .member(member)
+                    .build();
+            memoLikeRepository.save(memoLike);
+            Memo updatedMemo = memo.increaseLikeCnt();
+            memoRepository.save(updatedMemo);
+        }
     }
 }
