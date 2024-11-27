@@ -46,6 +46,10 @@ public class Memo extends BaseTimeEntity {
     @Builder.Default
     private List<MemoLike> memoLikes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "memo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<MemoHate> memoHates = new ArrayList<>();
+
     // 메모 이미지 추가
     public void addImages(List<String> imageUrls) {
         for (String url : imageUrls) {
@@ -87,6 +91,42 @@ public class Memo extends BaseTimeEntity {
                 .category(this.category)
                 .likeCnt(this.likeCnt - 1)
                 .hateCnt(this.hateCnt)
+                .ip(this.ip)
+                .images(this.images)
+                .memoLikes(this.memoLikes)
+                .build();
+    }
+
+    // 싫어요 증가
+    public Memo increaseHateCnt() {
+        return Memo.builder()
+                .id(this.id)
+                .member(this.member)
+                .title(this.title)
+                .content(this.content)
+                .lat(this.lat)
+                .lng(this.lng)
+                .category(this.category)
+                .likeCnt(this.likeCnt)
+                .hateCnt(this.hateCnt + 1)
+                .ip(this.ip)
+                .images(this.images)
+                .memoLikes(this.memoLikes)
+                .build();
+    }
+
+    // 싫어요 감소
+    public Memo decreaseHateCnt() {
+        return Memo.builder()
+                .id(this.id)
+                .member(this.member)
+                .title(this.title)
+                .content(this.content)
+                .lat(this.lat)
+                .lng(this.lng)
+                .category(this.category)
+                .likeCnt(this.likeCnt)
+                .hateCnt(this.hateCnt - 1)
                 .ip(this.ip)
                 .images(this.images)
                 .memoLikes(this.memoLikes)

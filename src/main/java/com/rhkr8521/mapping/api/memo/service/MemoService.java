@@ -9,8 +9,10 @@ import com.rhkr8521.mapping.api.memo.dto.MemoDetailResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
 import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
+import com.rhkr8521.mapping.api.memo.entity.MemoHate;
 import com.rhkr8521.mapping.api.memo.entity.MemoImage;
 import com.rhkr8521.mapping.api.memo.entity.MemoLike;
+import com.rhkr8521.mapping.api.memo.repository.MemoHateRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoLikeRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 public class MemoService {
     private final MemoRepository memoRepository;
     private final MemoLikeRepository memoLikeRepository;
+    private final MemoHateRepository memoHateRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
     private final S3Service s3Service;
@@ -239,6 +242,33 @@ public class MemoService {
                     .build();
             memoLikeRepository.save(memoLike);
             Memo updatedMemo = memo.increaseLikeCnt();
+            memoRepository.save(updatedMemo);
+        }
+    }
+
+    // 싫어요 토글
+    public void toggleHate(Long memoId, Long userId) {
+        Memo memo = memoRepository.findById(memoId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
+
+        if (existingHate.isPresent()) {
+            // 이미 싫어요를 눌렀으면 취소
+            memoHateRepository.delete(existingHate.get());
+            Memo updatedMemo = memo.decreaseHateCnt();
+            memoRepository.save(updatedMemo);
+        } else {
+            // 좋아요 누름
+            MemoLike memoHate = MemoLike.builder()
+                    .memo(memo)
+                    .member(member)
+                    .build();
+            memoLikeRepository.save(memoHate);
+            Memo updatedMemo = memo.increaseHateCnt();
             memoRepository.save(updatedMemo);
         }
     }
