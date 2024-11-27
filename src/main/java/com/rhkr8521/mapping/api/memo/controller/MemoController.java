@@ -240,6 +240,24 @@ public class MemoController {
         return ApiResponse.success_only(SuccessStatus.TOGGLE_LIKE_SUCCESS);
     }
 
+    @Operation(
+            summary = "메모 싫어요 토글 API",
+            description = "특정 메모에 싫어요를 누르거나 취소합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "싫어요 토글 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
+    })
+    @PostMapping("/hate/{memoId}")
+    public ResponseEntity<ApiResponse<Void>> toggleHate(
+            @PathVariable Long memoId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        memoService.toggleHate(memoId, userId);
+        return ApiResponse.success_only(SuccessStatus.TOGGLE_HATE_SUCCESS);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();
