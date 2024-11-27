@@ -104,15 +104,11 @@ public class MemoService {
         boolean myMemo = false;
         boolean myLike = false;
         boolean myHate = false;
+
         if (userDetails != null) {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-            myMemo = memo.getMember().getId().equals(userId);
-
-            // 해당 메모에 대한 좋아요 여부 확인
             myLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
-
-            // 해당 메모에 대한 좋아요 여부 확인
-            myHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
+            myHate = !myLike && memoHateRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
         }
 
         List<String> imageUrls = memo.getImages().isEmpty() ? null :
@@ -232,24 +228,33 @@ public class MemoService {
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
+        // 좋아요 상태 확인
         Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
 
         if (existingLike.isPresent()) {
-            // 이미 좋아요를 눌렀으면 취소
+            // 좋아요를 취소
             memoLikeRepository.delete(existingLike.get());
-            Memo updatedMemo = memo.decreaseLikeCnt();
-            memoRepository.save(updatedMemo);
+            memo.decreaseLikeCnt();
         } else {
-            // 좋아요 누름
+            // 싫어요를 취소 (상호 배타성 보장)
+            Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
+            if (existingHate.isPresent()) {
+                memoHateRepository.delete(existingHate.get());
+                memo.decreaseHateCnt();
+            }
+
+            // 좋아요 추가
             MemoLike memoLike = MemoLike.builder()
                     .memo(memo)
                     .member(member)
                     .build();
             memoLikeRepository.save(memoLike);
-            Memo updatedMemo = memo.increaseLikeCnt();
-            memoRepository.save(updatedMemo);
+            memo.increaseLikeCnt();
         }
+
+        memoRepository.save(memo);
     }
+
 
     // 싫어요 토글
     public void toggleHate(Long memoId, Long userId) {
@@ -259,22 +264,31 @@ public class MemoService {
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
+        // 싫어요 상태 확인
         Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
 
         if (existingHate.isPresent()) {
-            // 이미 싫어요를 눌렀으면 취소
+            // 싫어요를 취소
             memoHateRepository.delete(existingHate.get());
-            Memo updatedMemo = memo.decreaseHateCnt();
-            memoRepository.save(updatedMemo);
+            memo.decreaseHateCnt();
         } else {
-            // 싫어요 누름
+            // 좋아요를 취소 (상호 배타성 보장)
+            Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
+            if (existingLike.isPresent()) {
+                memoLikeRepository.delete(existingLike.get());
+                memo.decreaseLikeCnt();
+            }
+
+            // 싫어요 추가
             MemoHate memoHate = MemoHate.builder()
                     .memo(memo)
                     .member(member)
                     .build();
             memoHateRepository.save(memoHate);
-            Memo updatedMemo = memo.increaseHateCnt();
-            memoRepository.save(updatedMemo);
+            memo.increaseHateCnt();
         }
+
+        memoRepository.save(memo);
     }
+
 }
