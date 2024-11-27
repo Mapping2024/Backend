@@ -4,6 +4,7 @@ import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,10 @@ public class Memo extends BaseTimeEntity {
     private Long id;
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
+
     private double lat;
     private double lng;
     private String category;
