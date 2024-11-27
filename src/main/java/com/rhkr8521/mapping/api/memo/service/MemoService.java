@@ -267,12 +267,12 @@ public class MemoService {
             Memo updatedMemo = memo.decreaseHateCnt();
             memoRepository.save(updatedMemo);
         } else {
-            // 좋아요 누름
-            MemoLike memoHate = MemoLike.builder()
+            // 싫어요 누름
+            MemoHate memoHate = MemoHate.builder()
                     .memo(memo)
                     .member(member)
                     .build();
-            memoLikeRepository.save(memoHate);
+            memoHateRepository.save(memoHate);
             Memo updatedMemo = memo.increaseHateCnt();
             memoRepository.save(updatedMemo);
         }
