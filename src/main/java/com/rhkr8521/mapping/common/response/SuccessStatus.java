@@ -27,6 +27,7 @@ public enum SuccessStatus {
     SEND_MEMO_DETAIL_SUCCESS(HttpStatus.OK, "메모 상세 조회 성공"),
 
     DELETE_MEMO_SUCCESS(HttpStatus.OK, "메모 삭제 성공"),
+    UPDATE_MEMO_SUCCESS(HttpStatus.OK,"메모 수정 성공"),
 
     /**
      * 201

@@ -11,6 +11,7 @@ import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.entity.MemoImage;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
+import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -144,9 +146,65 @@ public class MemoService {
 
         // 게시글 작성자와 삭제 요청자가 다를 경우 예외 처리
         if (!memo.getMember().getId().equals(userId)) {
-            throw new NotFoundException(ErrorStatus.MEMO_DELETE_NOT_SAME_USER_EXCEPTION.getMessage());
+            throw new NotFoundException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
 
         memoRepository.delete(memo);
+    }
+
+    // 메모 수정
+    public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
+                           List<MultipartFile> newImages, List<String> deleteImageUrls) throws IOException {
+
+        Memo memo = memoRepository.findById(memoId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 메모 작성자 확인
+        if (!memo.getMember().getId().equals(userId)) {
+            throw new BadRequestException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
+        }
+
+        // 메모 정보 업데이트 (Builder 패턴 사용)
+        Memo updatedMemo = Memo.builder()
+                .id(memo.getId())
+                .member(memo.getMember())
+                .title(memoRequest.getTitle())
+                .content(memoRequest.getContent())
+                .lat(memo.getLat())
+                .lng(memo.getLng())
+                .category(memoRequest.getCategory())
+                .likeCnt(memo.getLikeCnt())
+                .hateCnt(memo.getHateCnt())
+                .ip(memo.getIp())
+                .images(new ArrayList<>(memo.getImages()))
+                .build();
+
+        // 삭제할 이미지 처리
+        if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
+            List<MemoImage> imagesToRemove = memo.getImages().stream()
+                    .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
+                    .collect(Collectors.toList());
+
+            for (MemoImage image : imagesToRemove) {
+                // S3에서 이미지 삭제
+                s3Service.deleteFile(image.getImageUrl());
+                // 메모에서 이미지 제거
+                updatedMemo.getImages().remove(image);
+            }
+        }
+
+        // 새로운 이미지 업로드 및 추가
+        if (newImages != null && !newImages.isEmpty()) {
+            List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
+            for (String url : imageUrls) {
+                MemoImage image = MemoImage.builder()
+                        .imageUrl(url)
+                        .memo(updatedMemo)
+                        .build();
+                updatedMemo.getImages().add(image);
+            }
+        }
+
+        memoRepository.save(updatedMemo);
     }
 }
