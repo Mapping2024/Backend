@@ -19,6 +19,7 @@ public class MemoDetailResponseDTO {
     private long hateCnt;
     private List<String> images;
     private boolean myMemo;
+    private boolean myLike;
     private Long authorId;
     private String nickname;
     private String profileImage;

@@ -28,6 +28,7 @@ public enum SuccessStatus {
 
     DELETE_MEMO_SUCCESS(HttpStatus.OK, "메모 삭제 성공"),
     UPDATE_MEMO_SUCCESS(HttpStatus.OK,"메모 수정 성공"),
+    TOGGLE_LIKE_SUCCESS(HttpStatus.OK, "좋아요 토글 성공"),
 
     /**
      * 201
