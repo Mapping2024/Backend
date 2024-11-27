@@ -103,12 +103,16 @@ public class MemoService {
 
         boolean myMemo = false;
         boolean myLike = false;
+        boolean myHate = false;
         if (userDetails != null) {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
             myMemo = memo.getMember().getId().equals(userId);
 
             // 해당 메모에 대한 좋아요 여부 확인
             myLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
+
+            // 해당 메모에 대한 좋아요 여부 확인
+            myHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
         }
 
         List<String> imageUrls = memo.getImages().isEmpty() ? null :
@@ -123,6 +127,7 @@ public class MemoService {
                 .images(imageUrls)
                 .myMemo(myMemo)
                 .myLike(myLike)
+                .myHate(myHate)
                 .authorId(memo.getMember().getId())
                 .nickname(memo.getMember().getNickname())
                 .profileImage(memo.getMember().getImageUrl())
