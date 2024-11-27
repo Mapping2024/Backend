@@ -145,6 +145,26 @@ public class MemoController {
         return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, myMemoList);
     }
 
+    @Operation(
+            summary = "메모 삭제 API",
+            description = "등록한 메모를 삭제합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "메모 작성자와 삭제 요청자가 다릅니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "메모를 찾을 수 없습니다.")
+    })
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteMemo(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        memoService.deleteMemo(id, userId);
+
+        return ApiResponse.success_only(SuccessStatus.DELETE_MEMO_SUCCESS);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();

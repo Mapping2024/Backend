@@ -137,4 +137,16 @@ public class MemoService {
                         memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList())
                 )).collect(Collectors.toList());
     }
+
+    public void deleteMemo(Long memoId, Long userId) {
+        Memo memo = memoRepository.findById(memoId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 게시글 작성자와 삭제 요청자가 다를 경우 예외 처리
+        if (!memo.getMember().getId().equals(userId)) {
+            throw new NotFoundException(ErrorStatus.MEMO_DELETE_NOT_SAME_USER_EXCEPTION.getMessage());
+        }
+
+        memoRepository.delete(memo);
+    }
 }
