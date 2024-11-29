@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -109,14 +110,20 @@ public class MemoService {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
             myLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
             myHate = !myLike && memoHateRepository.findByMemoIdAndMemberId(memoId, userId).isPresent();
+            myMemo = memo.getMember().getId().equals(userId);
         }
 
         List<String> imageUrls = memo.getImages().isEmpty() ? null :
                 memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList());
 
+        // 날짜 포맷팅
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss");
+        String formattedDate = memo.getUpdatedAt().format(formatter);
+
         return MemoDetailResponseDTO.builder()
                 .id(memo.getId())
                 .title(memo.getTitle())
+                .date(formattedDate)
                 .content(memo.getContent())
                 .likeCnt(memo.getLikeCnt())
                 .hateCnt(memo.getHateCnt())
@@ -234,13 +241,13 @@ public class MemoService {
         if (existingLike.isPresent()) {
             // 좋아요를 취소
             memoLikeRepository.delete(existingLike.get());
-            memo.decreaseLikeCnt();
+            memo = memo.decreaseLikeCnt();
         } else {
             // 싫어요를 취소 (상호 배타성 보장)
             Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
             if (existingHate.isPresent()) {
                 memoHateRepository.delete(existingHate.get());
-                memo.decreaseHateCnt();
+                memo = memo.decreaseHateCnt();
             }
 
             // 좋아요 추가
@@ -249,12 +256,11 @@ public class MemoService {
                     .member(member)
                     .build();
             memoLikeRepository.save(memoLike);
-            memo.increaseLikeCnt();
+            memo = memo.increaseLikeCnt();
         }
 
         memoRepository.save(memo);
     }
-
 
     // 싫어요 토글
     public void toggleHate(Long memoId, Long userId) {
@@ -270,13 +276,13 @@ public class MemoService {
         if (existingHate.isPresent()) {
             // 싫어요를 취소
             memoHateRepository.delete(existingHate.get());
-            memo.decreaseHateCnt();
+            memo = memo.decreaseHateCnt();
         } else {
             // 좋아요를 취소 (상호 배타성 보장)
             Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
             if (existingLike.isPresent()) {
                 memoLikeRepository.delete(existingLike.get());
-                memo.decreaseLikeCnt();
+                memo = memo.decreaseLikeCnt();
             }
 
             // 싫어요 추가
@@ -285,7 +291,7 @@ public class MemoService {
                     .member(member)
                     .build();
             memoHateRepository.save(memoHate);
-            memo.increaseHateCnt();
+            memo = memo.increaseHateCnt();
         }
 
         memoRepository.save(memo);

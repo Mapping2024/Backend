@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "memo")
-@Builder
+@Builder(toBuilder = true)
 public class Memo extends BaseTimeEntity {
 
     @Id
@@ -63,73 +63,29 @@ public class Memo extends BaseTimeEntity {
 
     // 좋아요 증가
     public Memo increaseLikeCnt() {
-        return Memo.builder()
-                .id(this.id)
-                .member(this.member)
-                .title(this.title)
-                .content(this.content)
-                .lat(this.lat)
-                .lng(this.lng)
-                .category(this.category)
+        return this.toBuilder()
                 .likeCnt(this.likeCnt + 1)
-                .hateCnt(this.hateCnt)
-                .ip(this.ip)
-                .images(this.images)
-                .memoLikes(this.memoLikes)
                 .build();
     }
 
     // 좋아요 감소
     public Memo decreaseLikeCnt() {
-        return Memo.builder()
-                .id(this.id)
-                .member(this.member)
-                .title(this.title)
-                .content(this.content)
-                .lat(this.lat)
-                .lng(this.lng)
-                .category(this.category)
+        return this.toBuilder()
                 .likeCnt(this.likeCnt - 1)
-                .hateCnt(this.hateCnt)
-                .ip(this.ip)
-                .images(this.images)
-                .memoLikes(this.memoLikes)
                 .build();
     }
 
     // 싫어요 증가
     public Memo increaseHateCnt() {
-        return Memo.builder()
-                .id(this.id)
-                .member(this.member)
-                .title(this.title)
-                .content(this.content)
-                .lat(this.lat)
-                .lng(this.lng)
-                .category(this.category)
-                .likeCnt(this.likeCnt)
+        return this.toBuilder()
                 .hateCnt(this.hateCnt + 1)
-                .ip(this.ip)
-                .images(this.images)
-                .memoLikes(this.memoLikes)
                 .build();
     }
 
     // 싫어요 감소
     public Memo decreaseHateCnt() {
-        return Memo.builder()
-                .id(this.id)
-                .member(this.member)
-                .title(this.title)
-                .content(this.content)
-                .lat(this.lat)
-                .lng(this.lng)
-                .category(this.category)
-                .likeCnt(this.likeCnt)
+        return this.toBuilder()
                 .hateCnt(this.hateCnt - 1)
-                .ip(this.ip)
-                .images(this.images)
-                .memoLikes(this.memoLikes)
                 .build();
     }
 }
