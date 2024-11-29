@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -15,6 +16,7 @@ public class MemoDetailResponseDTO {
     private Long id;
     private String title;
     private String content;
+    private String date;
     private long likeCnt;
     private long hateCnt;
     private List<String> images;
