@@ -17,6 +17,9 @@ public class MemoDetailResponseDTO {
     private String title;
     private String content;
     private String date;
+    private double lat;
+    private double lng;
+    private String category;
     private long likeCnt;
     private long hateCnt;
     private List<String> images;
