@@ -154,7 +154,7 @@ public class MemoController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "메모 작성자와 삭제 요청자가 다릅니다."),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "메모를 찾을 수 없습니다.")
     })
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/delete/{memoId}")
     public ResponseEntity<ApiResponse<Void>> deleteMemo(
             @PathVariable Long memoId,
             @AuthenticationPrincipal UserDetails userDetails
@@ -180,7 +180,7 @@ public class MemoController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
     })
-    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/update/{memoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> updateMemo(
             @PathVariable Long memoId,
             @RequestParam("title") String title,
