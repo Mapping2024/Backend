@@ -48,6 +48,8 @@ public class MemoController {
             @RequestParam("lng") double lng,
             @RequestParam("category") String category,
             @RequestParam("isPublic") boolean isPublic,
+            @RequestParam("currentLat") double currentLat,
+            @RequestParam("currentLng") double currentLng,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
             HttpServletRequest request) throws IOException {
@@ -73,6 +75,8 @@ public class MemoController {
                 .content(content)
                 .lat(lat)
                 .lng(lng)
+                .currentLat(currentLat)
+                .currentLng(currentLng)
                 .category(category)
                 .isPublic(isPublic)
                 .build();

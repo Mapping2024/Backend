@@ -14,6 +14,8 @@ public class MemoCreateRequestDTO {
     private String content;
     private double lat;
     private double lng;
+    private double currentLat;
+    private double currentLng;
     private String category;
     private boolean isPublic;
 }

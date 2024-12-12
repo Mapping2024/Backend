@@ -48,6 +48,16 @@ public class MemoService {
         // 접속 IP 추출
         String clientIp = extractClientIp(request);
 
+        // 인증 여부 판단
+        boolean certified = false;
+        if (memoRequest.isPublic()) {
+            double distanceKm = calculateDistance(memoRequest.getLat(), memoRequest.getLng(), memoRequest.getCurrentLat(), memoRequest.getCurrentLng());
+            // 10m = 0.01km
+            if (distanceKm <= 0.01) {
+                certified = true;
+            }
+        }
+
         Memo memo = Memo.builder()
                 .member(member)
                 .title(memoRequest.getTitle())
@@ -59,6 +69,7 @@ public class MemoService {
                 .hateCnt(0)
                 .ip(clientIp)
                 .isPublic(memoRequest.isPublic())
+                .certified(certified)
                 .build();
 
         // 이미지 처리
@@ -69,6 +80,19 @@ public class MemoService {
         }
 
         memoRepository.save(memo);
+    }
+
+    // 거리 계산 메서드(단위: km)
+    private double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+        double earthRadius = 6371; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double dist = earthRadius * c;
+        return dist;
     }
 
     // 클라이언트 IP 추출 메소드
@@ -94,7 +118,7 @@ public class MemoService {
                 .toList();
 
         return memos.stream()
-                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng()))
+                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng(), memo.isCertified()))
                 .collect(Collectors.toList());
     }
 
@@ -139,6 +163,7 @@ public class MemoService {
                 .authorId(memo.getMember().getId())
                 .nickname(memo.getMember().getNickname())
                 .profileImage(memo.getMember().getImageUrl())
+                .certified(memo.isCertified())
                 .build();
     }
 
@@ -170,7 +195,7 @@ public class MemoService {
                 .toList();
 
         return privateMemos.stream()
-                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng()))
+                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng(), memo.isCertified()))
                 .collect(Collectors.toList());
     }
 
