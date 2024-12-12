@@ -13,4 +13,5 @@ public class MemoTotalListResponseDTO {
     private String category;
     private double lat;
     private double lng;
+    private boolean certified;
 }

@@ -34,6 +34,7 @@ public class Memo extends BaseTimeEntity {
     private long hateCnt;
     private String ip;
     private boolean isPublic;
+    private boolean certified;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
