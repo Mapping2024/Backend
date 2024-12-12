@@ -5,15 +5,22 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemoCreateRequestDTO {
+public class MemoPrivateDetailResponseDTO {
+    private Long id;
     private String title;
     private String content;
+    private String date;
     private double lat;
     private double lng;
     private String category;
-    private boolean isPublic;
+    private List<String> images;
+    private Long authorId;
+    private String nickname;
+    private String profileImage;
 }
