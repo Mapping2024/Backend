@@ -4,10 +4,7 @@ import com.rhkr8521.mapping.api.aws.s3.S3Service;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.member.service.MemberService;
-import com.rhkr8521.mapping.api.memo.dto.MemoCreateRequestDTO;
-import com.rhkr8521.mapping.api.memo.dto.MemoDetailResponseDTO;
-import com.rhkr8521.mapping.api.memo.dto.MemoTotalListResponseDTO;
-import com.rhkr8521.mapping.api.memo.dto.MyMemoListResponseDTO;
+import com.rhkr8521.mapping.api.memo.dto.*;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.entity.MemoHate;
 import com.rhkr8521.mapping.api.memo.entity.MemoImage;
@@ -61,6 +58,7 @@ public class MemoService {
                 .likeCnt(0)
                 .hateCnt(0)
                 .ip(clientIp)
+                .isPublic(memoRequest.isPublic())
                 .build();
 
         // 이미지 처리
@@ -90,7 +88,10 @@ public class MemoService {
 
     // 전체 메모 조회
     public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km) {
-        List<Memo> memos = memoRepository.findMemosWithinRadius(lat, lng, km);
+        List<Memo> memos = memoRepository.findMemosWithinRadius(lat, lng, km)
+                .stream()
+                .filter(Memo::isPublic)
+                .toList();
 
         return memos.stream()
                 .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng()))
@@ -100,6 +101,7 @@ public class MemoService {
     // 메모 상세 조회
     public MemoDetailResponseDTO getMemoDetail(Long memoId, UserDetails userDetails) {
         Memo memo = memoRepository.findById(memoId)
+                .filter(Memo::isPublic)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
         boolean myMemo = false;
@@ -141,10 +143,7 @@ public class MemoService {
     }
 
     // 내가 작성한 메모 조회
-    public List<MyMemoListResponseDTO> getMyMemoList(UserDetails userDetails){
-
-        // 현재 사용자 조회
-        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+    public List<MyMemoListResponseDTO> getMyMemoList(Long userId){
 
         // 사용자 작성 메모 조회
         List<Memo> myMemos = memoRepository.findMemosByMemberId(userId);
@@ -162,6 +161,51 @@ public class MemoService {
                 )).collect(Collectors.toList());
     }
 
+    // 프라이빗 메모 전체 조회
+    public List<MemoTotalListResponseDTO> getPrivateMemosWithinRadius(Long userId, double lat, double lng, double km) {
+
+        List<Memo> privateMemos = memoRepository.findMemosWithinRadius(lat, lng, km)
+                .stream()
+                .filter(memo -> !memo.isPublic() && memo.getMember().getId().equals(userId)) // 본인이 작성한 프라이빗 메모만 필터링
+                .toList();
+
+        return privateMemos.stream()
+                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng()))
+                .collect(Collectors.toList());
+    }
+
+    // 프라이빗 메모 상세 조회
+    public MemoPrivateDetailResponseDTO getPrivateMemoDetail(Long userId, Long memoId) {
+
+        // 메모 조회 및 작성자 확인
+        Memo memo = memoRepository.findById(memoId)
+                .filter(m -> !m.isPublic() && m.getMember().getId().equals(userId)) // 프라이빗 메모 여부와 작성자 확인
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        List<String> imageUrls = memo.getImages().isEmpty() ? null :
+                memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList());
+
+        // 날짜 포맷팅
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss");
+        String formattedDate = memo.getUpdatedAt().format(formatter);
+
+        // 상세 조회 응답 DTO 생성
+        return MemoPrivateDetailResponseDTO.builder()
+                .id(memo.getId())
+                .title(memo.getTitle())
+                .date(formattedDate)
+                .content(memo.getContent())
+                .images(imageUrls)
+                .lat(memo.getLat())
+                .lng(memo.getLng())
+                .category(memo.getCategory())
+                .authorId(memo.getMember().getId())
+                .nickname(memo.getMember().getNickname())
+                .profileImage(memo.getMember().getImageUrl())
+                .build();
+    }
+
+    // 메모 삭제
     public void deleteMemo(Long memoId, Long userId) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
@@ -205,7 +249,7 @@ public class MemoService {
         if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
             List<MemoImage> imagesToRemove = memo.getImages().stream()
                     .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             for (MemoImage image : imagesToRemove) {
                 // S3에서 이미지 삭제
