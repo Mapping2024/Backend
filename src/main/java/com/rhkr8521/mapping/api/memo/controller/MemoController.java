@@ -47,7 +47,7 @@ public class MemoController {
             @RequestParam("lat") double lat,
             @RequestParam("lng") double lng,
             @RequestParam("category") String category,
-            @RequestParam("isPublic") boolean isPublic,
+            @RequestParam("secret") boolean secret,
             @RequestParam("currentLat") double currentLat,
             @RequestParam("currentLng") double currentLng,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -78,7 +78,7 @@ public class MemoController {
                 .currentLat(currentLat)
                 .currentLng(currentLng)
                 .category(category)
-                .isPublic(isPublic)
+                .secret(secret)
                 .build();
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());

@@ -50,7 +50,7 @@ public class MemoService {
 
         // 인증 여부 판단
         boolean certified = false;
-        if (memoRequest.isPublic()) {
+        if (!memoRequest.isSecret()) {
             double distanceKm = calculateDistance(memoRequest.getLat(), memoRequest.getLng(), memoRequest.getCurrentLat(), memoRequest.getCurrentLng());
             // 10m = 0.01km
             if (distanceKm <= 0.01) {
@@ -68,7 +68,7 @@ public class MemoService {
                 .likeCnt(0)
                 .hateCnt(0)
                 .ip(clientIp)
-                .isPublic(memoRequest.isPublic())
+                .secret(memoRequest.isSecret())
                 .certified(certified)
                 .build();
 
@@ -116,7 +116,8 @@ public class MemoService {
 
         // 공개 메모 필터
         List<Memo> publicMemos = allMemos.stream()
-                .filter(Memo::isPublic)
+                //.filter(Memo::isPrivate)
+                .filter(m -> !m.isSecret())
                 .toList();
 
         List<Memo> privateMemos = new ArrayList<>();
@@ -124,7 +125,7 @@ public class MemoService {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
             // 내 프라이빗 메모 필터
             privateMemos = allMemos.stream()
-                    .filter(m -> !m.isPublic() && m.getMember().getId().equals(userId))
+                    .filter(m -> m.isSecret() && m.getMember().getId().equals(userId))
                     .toList();
         }
 
@@ -139,7 +140,8 @@ public class MemoService {
                         memo.getCategory(),
                         memo.getLat(),
                         memo.getLng(),
-                        memo.isCertified()))
+                        memo.isCertified(),
+                        memo.isSecret()))
                 .collect(Collectors.toList());
     }
 
@@ -149,7 +151,7 @@ public class MemoService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
         // 프라이빗 메모인 경우 접근 권한 체크
-        if (!memo.isPublic()) {
+        if (memo.isSecret()) {
             if (userDetails == null) {
                 throw new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage());
             }
@@ -211,21 +213,8 @@ public class MemoService {
                         memo.getLikeCnt(),
                         memo.getHateCnt(),
                         memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList()),
-                        !memo.isPublic() // isPrivate 필드 추가
+                        memo.isSecret()
                 )).collect(Collectors.toList());
-    }
-
-    // 프라이빗 메모 전체 조회
-    public List<MemoTotalListResponseDTO> getPrivateMemosWithinRadius(Long userId, double lat, double lng, double km) {
-
-        List<Memo> privateMemos = memoRepository.findMemosWithinRadius(lat, lng, km)
-                .stream()
-                .filter(memo -> !memo.isPublic() && memo.getMember().getId().equals(userId)) // 본인이 작성한 프라이빗 메모만 필터링
-                .toList();
-
-        return privateMemos.stream()
-                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng(), memo.isCertified()))
-                .collect(Collectors.toList());
     }
 
     // 메모 삭제
