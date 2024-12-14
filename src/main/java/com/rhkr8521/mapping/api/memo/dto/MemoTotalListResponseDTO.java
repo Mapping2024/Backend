@@ -14,4 +14,5 @@ public class MemoTotalListResponseDTO {
     private double lat;
     private double lng;
     private boolean certified;
+    private boolean secret;
 }

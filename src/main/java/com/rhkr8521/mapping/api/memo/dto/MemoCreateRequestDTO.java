@@ -17,5 +17,5 @@ public class MemoCreateRequestDTO {
     private double currentLat;
     private double currentLng;
     private String category;
-    private boolean isPublic;
+    private boolean secret;
 }
