@@ -88,8 +88,8 @@ public class MemoController {
     }
 
     @Operation(
-            summary = "공개 메모 조회 API",
-            description = "현재 위치 위도와 경도를 기준으로 km 반경 내의 공개 메모를 조회합니다."
+            summary = "공개/비공개 메모 조회 API",
+            description = "현재 위치 위도와 경도를 기준으로 km 반경 내의 공개/비공개 메모를 조회합니다. | 토큰이 없다면 공개 메모만 조회"
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
@@ -99,20 +99,21 @@ public class MemoController {
     public ResponseEntity<ApiResponse<List<MemoTotalListResponseDTO>>> getMemosWithinRadius(
             @RequestParam("lat") Double lat,
             @RequestParam("lng") Double lng,
-            @RequestParam("km") Double km) {
+            @RequestParam("km") Double km,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         // 필수 입력 값 누락 체크
         if (lat == null || lng == null || km == null) {
             throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
         }
 
-        List<MemoTotalListResponseDTO> memos = memoService.getMemosWithinRadius(lat, lng, km);
+        List<MemoTotalListResponseDTO> memos = memoService.getMemosWithinRadius(lat, lng, km, userDetails);
         return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
     }
 
     @Operation(
-            summary = "공개 메모 상세 조회 API",
-            description = "특정 공개 메모의 상세 정보를 조회합니다. / 비 로그인 상태이면 토큰을 안넘기고, 로그인상태이면 엑세스토큰을 넘겨줘야합니다."
+            summary = "공개/비공개 메모 상세 조회 API",
+            description = "특정 공개/비공개 메모의 상세 정보를 조회합니다. / 비 로그인 상태이면 토큰을 안넘기고, 로그인상태이면 엑세스토큰을 넘겨줘야합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 상세 조회 성공"),
@@ -131,48 +132,6 @@ public class MemoController {
 
         MemoDetailResponseDTO memoDetail = memoService.getMemoDetail(memoId, userDetails);
         return ApiResponse.success(SuccessStatus.SEND_MEMO_DETAIL_SUCCESS, memoDetail);
-    }
-
-    @Operation(summary = "내 프라이빗 메모 전체 조회 API", description = "내가 작성한 프라이빗 메모를 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
-    })
-    @GetMapping("/private/total")
-    public ResponseEntity<ApiResponse<List<MemoTotalListResponseDTO>>> getPrivateMemosWithinRadius(
-            @RequestParam("lat") Double lat,
-            @RequestParam("lng") Double lng,
-            @RequestParam("km") Double km,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (lat == null || lng == null || km == null) {
-            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
-        }
-
-        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-
-        List<MemoTotalListResponseDTO> privateMemos = memoService.getPrivateMemosWithinRadius(userId, lat, lng, km);
-        return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, privateMemos);
-    }
-
-    @Operation(summary = "내 프라이빗 메모 상세 조회 API", description = "내가 작성한 특정 프라이빗 메모의 상세 정보를 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
-    })
-    @GetMapping("/private/detail")
-    public ResponseEntity<ApiResponse<MemoPrivateDetailResponseDTO>> getPrivateMemoDetail(
-            @RequestParam Long memoId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (memoId == null) {
-            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
-        }
-
-        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-
-        MemoPrivateDetailResponseDTO privateMemoDetail = memoService.getPrivateMemoDetail(userId, memoId);
-        return ApiResponse.success(SuccessStatus.SEND_MEMO_DETAIL_SUCCESS, privateMemoDetail);
     }
 
     @Operation(
