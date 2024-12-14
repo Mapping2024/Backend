@@ -18,4 +18,5 @@ public class MyMemoListResponseDTO {
     private long likeCnt;
     private long hateCnt;
     private List<String> images;
+    private boolean isPrivate;
 }

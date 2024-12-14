@@ -110,23 +110,54 @@ public class MemoService {
         return clientIp;
     }
 
-    // 전체 메모 조회
-    public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km) {
-        List<Memo> memos = memoRepository.findMemosWithinRadius(lat, lng, km)
-                .stream()
+    // 전체 메모 조회(공개 + 비공개)
+    public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km, UserDetails userDetails) {
+        List<Memo> allMemos = memoRepository.findMemosWithinRadius(lat, lng, km);
+
+        // 공개 메모 필터
+        List<Memo> publicMemos = allMemos.stream()
                 .filter(Memo::isPublic)
                 .toList();
 
-        return memos.stream()
-                .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng(), memo.isCertified()))
+        List<Memo> privateMemos = new ArrayList<>();
+        if (userDetails != null) {
+            Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+            // 내 프라이빗 메모 필터
+            privateMemos = allMemos.stream()
+                    .filter(m -> !m.isPublic() && m.getMember().getId().equals(userId))
+                    .toList();
+        }
+
+        // 공개 메모 + 내 프라이빗 메모 합치기
+        List<Memo> combinedMemos = new ArrayList<>(publicMemos);
+        combinedMemos.addAll(privateMemos);
+
+        return combinedMemos.stream()
+                .map(memo -> new MemoTotalListResponseDTO(
+                        memo.getId(),
+                        memo.getTitle(),
+                        memo.getCategory(),
+                        memo.getLat(),
+                        memo.getLng(),
+                        memo.isCertified()))
                 .collect(Collectors.toList());
     }
 
     // 메모 상세 조회
     public MemoDetailResponseDTO getMemoDetail(Long memoId, UserDetails userDetails) {
         Memo memo = memoRepository.findById(memoId)
-                .filter(Memo::isPublic)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 프라이빗 메모인 경우 접근 권한 체크
+        if (!memo.isPublic()) {
+            if (userDetails == null) {
+                throw new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage());
+            }
+            Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+            if (!memo.getMember().getId().equals(userId)) {
+                throw new NotFoundException(ErrorStatus.INVALID_VIEW_AUTH.getMessage());
+            }
+        }
 
         boolean myMemo = false;
         boolean myLike = false;
@@ -169,11 +200,8 @@ public class MemoService {
 
     // 내가 작성한 메모 조회
     public List<MyMemoListResponseDTO> getMyMemoList(Long userId){
-
-        // 사용자 작성 메모 조회
         List<Memo> myMemos = memoRepository.findMemosByMemberId(userId);
 
-        // DTO 변환 및 반환
         return myMemos.stream()
                 .map(memo -> new MyMemoListResponseDTO(
                         memo.getId(),
@@ -182,7 +210,8 @@ public class MemoService {
                         memo.getCategory(),
                         memo.getLikeCnt(),
                         memo.getHateCnt(),
-                        memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList())
+                        memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList()),
+                        !memo.isPublic() // isPrivate 필드 추가
                 )).collect(Collectors.toList());
     }
 
@@ -197,37 +226,6 @@ public class MemoService {
         return privateMemos.stream()
                 .map(memo -> new MemoTotalListResponseDTO(memo.getId(), memo.getTitle(), memo.getCategory(), memo.getLat(), memo.getLng(), memo.isCertified()))
                 .collect(Collectors.toList());
-    }
-
-    // 프라이빗 메모 상세 조회
-    public MemoPrivateDetailResponseDTO getPrivateMemoDetail(Long userId, Long memoId) {
-
-        // 메모 조회 및 작성자 확인
-        Memo memo = memoRepository.findById(memoId)
-                .filter(m -> !m.isPublic() && m.getMember().getId().equals(userId)) // 프라이빗 메모 여부와 작성자 확인
-                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
-
-        List<String> imageUrls = memo.getImages().isEmpty() ? null :
-                memo.getImages().stream().map(MemoImage::getImageUrl).collect(Collectors.toList());
-
-        // 날짜 포맷팅
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss");
-        String formattedDate = memo.getUpdatedAt().format(formatter);
-
-        // 상세 조회 응답 DTO 생성
-        return MemoPrivateDetailResponseDTO.builder()
-                .id(memo.getId())
-                .title(memo.getTitle())
-                .date(formattedDate)
-                .content(memo.getContent())
-                .images(imageUrls)
-                .lat(memo.getLat())
-                .lng(memo.getLng())
-                .category(memo.getCategory())
-                .authorId(memo.getMember().getId())
-                .nickname(memo.getMember().getNickname())
-                .profileImage(memo.getMember().getImageUrl())
-                .build();
     }
 
     // 메모 삭제
