@@ -55,7 +55,9 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers( "/api-doc", "/health","/v3/api-docs/**", "/swagger-resources/**","/swagger-ui/**", "/h2-console/**", "/api/v2/memo/total", "/api/v2/memo/detail").permitAll()
+                        .requestMatchers( "/api-doc", "/health","/v3/api-docs/**", "/swagger-resources/**","/swagger-ui/**", "/h2-console/**").permitAll() // 스웨거, H2콘솔
+                        .requestMatchers( "/api/v2/memo/total", "/api/v2/memo/detail").permitAll() // 메모 조회 관련 API
+                        .requestMatchers( "/api/v2/comment").permitAll() // 댓글 조회 관련 API
                         .requestMatchers("/oauth2/authorization/kakao", "/api/v2/member/accesstoken", "/api/v2/member/login", "/api/v2/member/token-reissue").permitAll() //로그인 관련 API 미인증 접근 가능
                         .anyRequest().authenticated() // 위의 경로 이외에는 모두 인증된 사용자만 접근 가능
                 )

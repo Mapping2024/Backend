@@ -24,7 +24,9 @@ public enum ErrorStatus {
     NOT_ALLOW_IMG_MIME(HttpStatus.BAD_REQUEST,"이미지 파일(jpg, jpeg, png, bmp, webp) 만 업로드할 수 있습니다."),
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"중복된 닉네임입니다."),
     MEMO_WRITER_NOT_SAME_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"메모 작성자와 삭제 요청자가 다릅니다."),
-
+    MISSING_COMMENT(HttpStatus.BAD_REQUEST,"댓글이 입력되지 않았습니다."),
+    MISSING_COMMENT_ID(HttpStatus.BAD_REQUEST,"댓글 ID가 입력되지 않았습니다."),
+    MISSING_COMMENT_MEMOID(HttpStatus.BAD_REQUEST,"메모 ID가 입력되지 않았습니다."),
     /**
      * 401 UNAUTHORIZED
      */
@@ -41,7 +43,7 @@ public enum ErrorStatus {
 
     USER_NOTFOUND_EXCEPTION(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
     MEMO_NOTFOUND_EXCEPTION(HttpStatus.NOT_FOUND, "해당 메모를 찾을 수 없습니다."),
-
+    COMMENT_NOTFOUND_EXCPETION(HttpStatus.NOT_FOUND,"해당 댓글을 찾을 수 없습니다."),
     /**
      * 500 SERVER_ERROR
      */
