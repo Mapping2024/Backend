@@ -53,7 +53,7 @@ public class MemoService {
         if (!memoRequest.isSecret()) {
             double distanceKm = calculateDistance(memoRequest.getLat(), memoRequest.getLng(), memoRequest.getCurrentLat(), memoRequest.getCurrentLng());
             // 10m = 0.01km
-            if (distanceKm <= 0.01) {
+            if (distanceKm <= 0.1) {
                 certified = true;
             }
         }
