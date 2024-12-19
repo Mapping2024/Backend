@@ -9,6 +9,7 @@ import com.rhkr8521.mapping.common.exception.InternalServerException;
 import com.rhkr8521.mapping.common.response.ApiResponse;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import com.rhkr8521.mapping.common.response.SuccessStatus;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,7 @@ public class MemberController {
     private final OAuthService oauthService;
     private final JwtService jwtService;
 
+    @Hidden
     @Operation(
             summary = "[백엔드 용] 카카오 엑세스토큰 발급 API",
             description = "/oauth2/authorization/kakao 엔드포인트를 통해 엑세스토큰을 발급합니다."
