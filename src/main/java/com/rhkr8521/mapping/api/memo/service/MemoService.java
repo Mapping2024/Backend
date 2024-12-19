@@ -70,6 +70,7 @@ public class MemoService {
                 .ip(clientIp)
                 .secret(memoRequest.isSecret())
                 .certified(certified)
+                .modify(false)
                 .build();
 
         // 이미지 처리
@@ -177,7 +178,7 @@ public class MemoService {
 
         // 날짜 포맷팅
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss");
-        String formattedDate = memo.getUpdatedAt().format(formatter);
+        String formattedDate = memo.getCreatedAt().format(formatter);
 
         return MemoDetailResponseDTO.builder()
                 .id(memo.getId())
@@ -197,6 +198,7 @@ public class MemoService {
                 .nickname(memo.getMember().getNickname())
                 .profileImage(memo.getMember().getImageUrl())
                 .certified(memo.isCertified())
+                .modify(memo.isModify())
                 .build();
     }
 
@@ -255,6 +257,7 @@ public class MemoService {
                 .hateCnt(memo.getHateCnt())
                 .ip(memo.getIp())
                 .images(new ArrayList<>(memo.getImages()))
+                .modify(true)
                 .build();
 
         // 삭제할 이미지 처리

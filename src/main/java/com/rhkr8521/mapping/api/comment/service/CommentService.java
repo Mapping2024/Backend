@@ -51,6 +51,7 @@ public class CommentService {
                 .member(member)
                 .rating(commentCreateDTO.getRating())
                 .likeCnt(0)
+                .modify(false)
                 .build();
 
         commentRepository.save(comment);
@@ -99,6 +100,7 @@ public class CommentService {
         comment = comment.toBuilder()
                 .comment(commentUpdateDTO.getComment())
                 .rating(commentUpdateDTO.getRating())
+                .modify(true)
                 .build();
 
         commentRepository.save(comment);

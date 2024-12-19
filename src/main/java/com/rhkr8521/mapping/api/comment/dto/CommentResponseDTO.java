@@ -14,6 +14,7 @@ public class CommentResponseDTO {
     private String comment;
     private int rating;
     private int likeCnt;
+    private boolean modify;
     private String nickname;
     private String profileImageUrl;
     private String updatedAt;
@@ -29,8 +30,9 @@ public class CommentResponseDTO {
                 .likeCnt(comment.getLikeCnt())
                 .nickname(comment.getMember().getNickname())
                 .profileImageUrl(comment.getMember().getImageUrl())
-                .updatedAt(comment.getUpdatedAt().format(dateTimeFormatter))
+                .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
                 .myLike(myLike)
+                .modify(comment.isModify())
                 .build();
     }
 }
