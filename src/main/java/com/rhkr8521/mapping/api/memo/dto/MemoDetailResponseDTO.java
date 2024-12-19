@@ -26,6 +26,7 @@ public class MemoDetailResponseDTO {
     private boolean myLike;
     private boolean myHate;
     private boolean certified;
+    private boolean modify;
     private Long authorId;
     private String nickname;
     private String profileImage;
