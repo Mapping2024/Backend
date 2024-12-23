@@ -21,7 +21,7 @@ public class CommentResponseDTO {
     private boolean myLike;
 
     public static CommentResponseDTO fromEntity(Comment comment, boolean myLike) {
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         return CommentResponseDTO.builder()
                 .id(comment.getId())
