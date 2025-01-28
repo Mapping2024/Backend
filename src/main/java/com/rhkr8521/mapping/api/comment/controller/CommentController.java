@@ -61,28 +61,50 @@ public class CommentController {
     }
 
     @Operation(
-            summary = "댓글 조회 API",
-            description = "메모에 달린 댓글을 조회합니다."
+            summary = "댓글 ID 목록 조회 API",
+            description = "메모에 달린 댓글의 ID 목록을 조회합니다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "댓글 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "댓글 ID 목록 조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "게시글 ID가 입력되지 않았습니다."),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없습니다.")
     })
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<CommentResponseDTO>>> getCommentsByArticleId(
-            @RequestParam Long memoId,
-            @AuthenticationPrincipal UserDetails userDetails
+    @GetMapping("/ids")
+    public ResponseEntity<ApiResponse<List<Long>>> getCommentIdsByMemoId(
+            @RequestParam Long memoId
     ) {
-
         // 메모 ID 누락시 예외처리
         if (memoId == null) {
             throw new NotFoundException(ErrorStatus.MISSING_COMMENT_MEMOID.getMessage());
         }
 
-        List<CommentResponseDTO> comments = commentService.getCommentsByMemoId(memoId,userDetails);
+        List<Long> commentIds = commentService.getCommentIdsByMemoId(memoId);
 
-        return ApiResponse.success(SuccessStatus.SEND_COMMENT_SUCCESS, comments);
+        return ApiResponse.success(SuccessStatus.SEND_COMMENT_IDS_SUCCESS, commentIds);
+    }
+
+    @Operation(
+            summary = "댓글 상세 조회 API",
+            description = "특정 댓글의 상세 정보를 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "댓글 상세 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "댓글 ID가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없습니다.")
+    })
+    @GetMapping("/{commentId}")
+    public ResponseEntity<ApiResponse<CommentResponseDTO>> getCommentDetail(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        // 댓글 ID 누락시 예외처리
+        if (commentId == null) {
+            throw new NotFoundException(ErrorStatus.MISSING_COMMENT_ID.getMessage());
+        }
+
+        CommentResponseDTO commentDetail = commentService.getCommentDetail(commentId, userDetails);
+
+        return ApiResponse.success(SuccessStatus.SEND_COMMENT_DETAIL_SUCCESS, commentDetail);
     }
 
     @Operation(

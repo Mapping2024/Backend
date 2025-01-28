@@ -31,7 +31,8 @@ public enum SuccessStatus {
     TOGGLE_LIKE_SUCCESS(HttpStatus.OK, "좋아요 토글 성공"),
     TOGGLE_HATE_SUCCESS(HttpStatus.OK,"싫어요 토글 성공"),
 
-    SEND_COMMENT_SUCCESS(HttpStatus.OK,"댓글 조회 성공"),
+    SEND_COMMENT_IDS_SUCCESS(HttpStatus.OK,"댓글 ID 목록 조회 성공"),
+    SEND_COMMENT_DETAIL_SUCCESS(HttpStatus.OK,"댓글 상세 조회 성공"),
     MODIFY_COMMENT_SUCCESS(HttpStatus.OK,"댓글 수정 성공"),
     DELETE_COMMENT_SUCCESS(HttpStatus.OK,"댓글 삭제 상공"),
     /**
