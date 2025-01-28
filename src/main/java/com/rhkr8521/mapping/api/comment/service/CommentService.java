@@ -57,32 +57,37 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
-    // 댓글 조회
+    // 댓글 ID 목록 조회 (createdAt 기준 내림차순 정렬)
     @Transactional(readOnly = true)
-    public List<CommentResponseDTO> getCommentsByMemoId(Long memoId, UserDetails userDetails) {
+    public List<Long> getCommentIdsByMemoId(Long memoId) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
-        // userId 변수 설정
+        // createdAt 기준으로 내림차순 정렬된 댓글 목록 조회
+        List<Comment> comments = commentRepository.findByMemoOrderByCreatedAtDesc(memo);
+
+        return comments.stream()
+                .map(Comment::getId)
+                .collect(Collectors.toList());
+    }
+
+    // 댓글 상세 조회
+    @Transactional(readOnly = true)
+    public CommentResponseDTO getCommentDetail(Long commentId, UserDetails userDetails) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+
         Long userId = null;
         if (userDetails != null) {
             userId = memberService.getUserIdByEmail(userDetails.getUsername());
         }
 
-        // 람다에서 참조할 수 있도록 final 변수로 다시 할당
-        final Long finalUserId = userId;
+        boolean myLike = false;
+        if (userId != null) {
+            myLike = commentLikeRepository.findByCommentIdAndMemberId(commentId, userId).isPresent();
+        }
 
-        List<Comment> comments = commentRepository.findByMemo(memo);
-
-        return comments.stream()
-                .map(c -> {
-                    boolean myLike = false;
-                    if (finalUserId != null) {
-                        myLike = commentLikeRepository.findByCommentIdAndMemberId(c.getId(), finalUserId).isPresent();
-                    }
-                    return CommentResponseDTO.fromEntity(c, myLike);
-                })
-                .collect(Collectors.toList());
+        return CommentResponseDTO.fromEntity(comment, myLike);
     }
 
     // 댓글 수정
