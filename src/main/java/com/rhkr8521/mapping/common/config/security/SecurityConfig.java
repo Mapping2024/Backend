@@ -1,11 +1,11 @@
 package com.rhkr8521.mapping.common.config.security;
 
 import com.rhkr8521.mapping.common.config.jwt.JwtConfig;
-import com.rhkr8521.mapping.common.config.oauth2.OAuth2Config;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
