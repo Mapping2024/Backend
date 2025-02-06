@@ -123,6 +123,9 @@ public class CommentService {
             throw new UnauthorizedException(ErrorStatus.INVALID_DELETE_AUTH.getMessage());
         }
 
+        // CommentLike 삭제
+        commentLikeRepository.deleteAllByCommentId(commentId);
+
         commentRepository.delete(comment);
     }
 

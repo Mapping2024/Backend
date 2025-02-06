@@ -1,6 +1,9 @@
 package com.rhkr8521.mapping.api.memo.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
+import com.rhkr8521.mapping.api.comment.entity.Comment;
+import com.rhkr8521.mapping.api.comment.repository.CommentLikeRepository;
+import com.rhkr8521.mapping.api.comment.repository.CommentRepository;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.member.service.MemberService;
@@ -18,6 +21,7 @@ import com.rhkr8521.mapping.common.response.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +38,8 @@ public class MemoService {
     private final MemoRepository memoRepository;
     private final MemoLikeRepository memoLikeRepository;
     private final MemoHateRepository memoHateRepository;
+    private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
     private final S3Service s3Service;
@@ -220,6 +226,7 @@ public class MemoService {
     }
 
     // 메모 삭제
+    @Transactional
     public void deleteMemo(Long memoId, Long userId) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
@@ -229,8 +236,24 @@ public class MemoService {
             throw new NotFoundException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
 
+        // 해당 Memo의 모든 댓글 조회
+        List<Comment> comments = commentRepository.findByMemoId(memoId);
+
+        // 각 댓글의 좋아요(CommentLike) 삭제
+        for (Comment comment : comments) {
+            commentLikeRepository.deleteAllByCommentId(comment.getId());
+        }
+
+        //⃣ 댓글(Comment) 삭제
+        commentRepository.deleteAllByMemoId(memoId);
+
+        // MemoLike, MemoHate 삭제
+        memoLikeRepository.deleteAllByMemoId(memoId);
+        memoHateRepository.deleteAllByMemoId(memoId);
+
+        // 메모 삭제
         memoRepository.delete(memo);
-    }
+        }
 
     // 메모 수정
     public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,

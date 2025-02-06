@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface MemoLikeRepository extends JpaRepository<MemoLike, Long> {
     Optional<MemoLike> findByMemoIdAndMemberId(Long memoId, Long memberId);
+    void deleteAllByMemoId(Long memoId);
 }
