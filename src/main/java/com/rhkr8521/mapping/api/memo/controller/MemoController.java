@@ -264,6 +264,36 @@ public class MemoController {
         return ApiResponse.success_only(SuccessStatus.TOGGLE_HATE_SUCCESS);
     }
 
+    @Operation(
+            summary = "내가 댓글 작성한 메모 목록 조회 API",
+            description = "내가 댓글 작성한 메모 목록을 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "전체 메모 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
+    })
+    @GetMapping("/commented")
+    public ResponseEntity<ApiResponse<List<MemoListResponseDTO>>> getMemosWithMyComments(@AuthenticationPrincipal UserDetails userDetails) {
+
+        List<MemoListResponseDTO> memos = memoService.getMemosWithMyComments(userDetails);
+        return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
+    }
+
+    @Operation(
+            summary = "내가 좋아요 누른 메모 목록 조회 API",
+            description = "내가 댓글 작성한 메모 목록을 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "전체 메모 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
+    })
+    @GetMapping("/liked")
+    public ResponseEntity<ApiResponse<List<MemoListResponseDTO>>> getMemosILiked(@AuthenticationPrincipal UserDetails userDetails) {
+
+        List<MemoListResponseDTO> memos =memoService.getMemosILiked(userDetails);
+        return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();
