@@ -382,4 +382,49 @@ public class MemoService {
         memoRepository.save(memo);
     }
 
+    // 내가 댓글 작성한 메모 목록 조회
+    @Transactional(readOnly = true)
+    public List<MemoListResponseDTO> getMemosWithMyComments(UserDetails userDetails) {
+        Long userId = memberRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()))
+                .getId();
+
+        List<Memo> memos = commentRepository.findDistinctMemoByMemberId(userId);
+
+        return memos.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // 내가 좋아요 누른 메모 목록 조회
+    @Transactional(readOnly = true)
+    public List<MemoListResponseDTO> getMemosILiked(UserDetails userDetails) {
+        Long userId = memberRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()))
+                .getId();
+
+        List<Memo> likedMemos = memoLikeRepository.findMemosByMemberId(userId);
+
+        return likedMemos.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Memo -> MemoListResponseDTO 변환
+    private MemoListResponseDTO convertToDTO(Memo memo) {
+        List<String> imageUrls = memo.getImages().stream()
+                .map(MemoImage::getImageUrl)
+                .collect(Collectors.toList());
+
+        return MemoListResponseDTO.builder()
+                .id(memo.getId())
+                .title(memo.getTitle())
+                .content(memo.getContent())
+                .category(memo.getCategory())
+                .likeCnt(memo.getLikeCnt())
+                .hateCnt(memo.getHateCnt())
+                .images(imageUrls)
+                .build();
+    }
+
 }

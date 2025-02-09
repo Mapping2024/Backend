@@ -22,4 +22,5 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
                                      @Param("km") double km);
 
     List<Memo> findMemosByMemberId(Long memberId);
+
 }
