@@ -17,9 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -30,6 +28,34 @@ public class MemberService {
     private final JwtService jwtService;
     private final OAuthService oAuthService;
     private final S3Service s3Service;
+
+    private static final List<String> FIRST_WORDS = Arrays.asList(
+            "멍청한", "빠른", "귀여운", "화난", "배고픈", "행복한", "똑똑한", "졸린", "심술궂은", "시끄러운",
+            "고요한", "차가운", "뜨거운", "용감한", "겁쟁이", "수줍은", "대담한", "게으른", "성실한", "조용한",
+            "활발한", "이상한", "웃긴", "짜증난", "애매한", "창의적인", "독특한", "신나는", "졸린", "수상한",
+            "무서운", "어리석은", "슬픈", "고마운", "느린", "적극적인", "부끄러운", "당당한", "예민한", "단순한"
+    );
+
+    private static final List<String> SECOND_WORDS = Arrays.asList(
+            "고양이", "강아지", "토끼", "사자", "호랑이", "펭귄", "코끼리", "여우", "늑대", "곰", "너구리",
+            "다람쥐", "치타", "하이에나", "고릴라", "캥거루", "햄스터", "카멜레온", "악어", "두더지", "수달",
+            "부엉이", "참새", "독수리", "오리", "거북이", "물개", "돌고래", "고래", "불가사리", "미어캣",
+            "해파리", "코알라", "낙타", "아기돼지", "강치", "이구아나", "오징어", "문어", "갈매기", "오소리"
+    );
+
+    private static String generateRandomNickname() {
+        Random random = new Random();
+
+        // 첫 번째 단어(형용사)와 두 번째 단어(명사)를 랜덤 선택
+        String firstWord = FIRST_WORDS.get(random.nextInt(FIRST_WORDS.size()));
+        String secondWord = SECOND_WORDS.get(random.nextInt(SECOND_WORDS.size()));
+
+        // 두 자리 숫자 생성 (00~99)
+        int randomNumber = random.nextInt(100); // 0~99
+        String formattedNumber = String.format("%02d", randomNumber); // 두 자리로 변환 (ex: 03, 57)
+
+        return firstWord + secondWord + "#" + formattedNumber;
+    }
 
     @Transactional
     public Map<String, Object> loginWithKakao(String kakaoAccessToken) {
@@ -64,7 +90,7 @@ public class MemberService {
         Member member = Member.builder()
                 .socialId(kakaoUserInfo.getId())
                 .email(UUID.randomUUID() + "@socialUser.com")
-                .nickname(kakaoUserInfo.getNickname())
+                .nickname(generateRandomNickname())
                 .imageUrl(kakaoUserInfo.getProfileImage())
                 .role(Role.USER)
                 .build();
