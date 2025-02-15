@@ -22,13 +22,13 @@ public class CommentResponseDTO {
 
     public static CommentResponseDTO fromEntity(Comment comment, boolean myLike) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
+        String nickname = comment.getMember().isDeleted() ? "(알수없음)" : comment.getMember().getNickname();
         return CommentResponseDTO.builder()
                 .id(comment.getId())
                 .comment(comment.getComment())
                 .rating(comment.getRating())
                 .likeCnt(comment.getLikeCnt())
-                .nickname(comment.getMember().getNickname())
+                .nickname(nickname)
                 .profileImageUrl(comment.getMember().getImageUrl())
                 .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
                 .myLike(myLike)

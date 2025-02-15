@@ -158,6 +158,22 @@ public class MemberController {
         return ApiResponse.success(SuccessStatus.GET_USERINFO_SUCCESS, userInfo);
     }
 
+    @Operation(
+            summary = "회원 탈퇴 API",
+            description = "로그인한 사용자의 계정을 논리적 삭제 처리합니다. (기존 작성된 메모, 댓글 등은 유지됩니다.)"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "이미 탈퇴한 회원입니다.")
+    })
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<ApiResponse<Void>> withdrawMember(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        memberService.withdrawMember(userId);
+        return ApiResponse.success_only(SuccessStatus.DELETE_MEMBER_SUCCESS);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();
