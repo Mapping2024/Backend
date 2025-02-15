@@ -27,6 +27,8 @@ public enum ErrorStatus {
     MISSING_COMMENT(HttpStatus.BAD_REQUEST,"댓글이 입력되지 않았습니다."),
     MISSING_COMMENT_ID(HttpStatus.BAD_REQUEST,"댓글 ID가 입력되지 않았습니다."),
     MISSING_COMMENT_MEMOID(HttpStatus.BAD_REQUEST,"메모 ID가 입력되지 않았습니다."),
+    ALEADY_DELETE_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"이미 탈퇴한 회원입니다."),
+
     /**
      * 401 UNAUTHORIZED
      */

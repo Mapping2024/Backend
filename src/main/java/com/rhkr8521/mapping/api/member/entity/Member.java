@@ -6,6 +6,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -32,6 +34,18 @@ public class Member extends BaseTimeEntity implements UserDetails{
     private String socialId; // 로그인한 소셜 타입의 식별자 값
 
     private String refreshToken; // 리프레시 토큰
+
+    private boolean deleted; // 회원 탈퇴
+    private LocalDateTime deletedAt; // 탈퇴 날짜
+
+    // 회원 논리 삭제 처리
+    public Member markAsDeleted() {
+        return this.toBuilder()
+                .deleted(true)
+                .imageUrl(null)
+                .deletedAt(LocalDateTime.now())
+                .build();
+    }
 
     // 광고주 권한 설정 메소드
     public Member authorizeAd() {

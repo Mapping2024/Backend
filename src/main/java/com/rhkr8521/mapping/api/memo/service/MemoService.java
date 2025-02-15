@@ -186,6 +186,8 @@ public class MemoService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd:HH:mm:ss");
         String formattedDate = memo.getCreatedAt().format(formatter);
 
+        String nickname = memo.getMember().isDeleted() ? "(알수없음)" : memo.getMember().getNickname();
+
         return MemoDetailResponseDTO.builder()
                 .id(memo.getId())
                 .title(memo.getTitle())
@@ -201,7 +203,7 @@ public class MemoService {
                 .myLike(myLike)
                 .myHate(myHate)
                 .authorId(memo.getMember().getId())
-                .nickname(memo.getMember().getNickname())
+                .nickname(nickname)
                 .profileImage(memo.getMember().getImageUrl())
                 .certified(memo.isCertified())
                 .modify(memo.isModify())

@@ -79,11 +79,26 @@ public class MemberService {
     }
 
     // 카카오 사용자 정보를 사용해 회원가입 또는 로그인 처리
+    @Transactional
     public Member registerOrLoginKakaoUser(KakaoUserInfoDTO kakaoUserInfo) {
-        // 카카오 사용자 ID로 사용자 조회
-        return memberRepository.findBySocialId(kakaoUserInfo.getId())
-                .orElseGet(() -> registerNewKakaoUser(kakaoUserInfo));  // 없으면 새 사용자 등록
+        Optional<Member> optionalMember = memberRepository.findBySocialId(kakaoUserInfo.getId());
+        if (optionalMember.isPresent()) {
+            Member member = optionalMember.get();
+
+            // 탈퇴한 회원인 경우 복구 처리
+            if (member.isDeleted()) {
+                member = member.toBuilder()
+                        .deleted(false)
+                        .deletedAt(null)
+                        .build();
+                memberRepository.save(member);
+            }
+            return member;
+        } else {
+            return registerNewKakaoUser(kakaoUserInfo);
+        }
     }
+
 
     // 새로운 카카오 사용자 등록
     private Member registerNewKakaoUser(KakaoUserInfoDTO kakaoUserInfo) {
@@ -93,6 +108,8 @@ public class MemberService {
                 .nickname(generateRandomNickname())
                 .imageUrl(kakaoUserInfo.getProfileImage())
                 .role(Role.USER)
+                .deleted(false)
+                .deletedAt(null)
                 .build();
 
         memberRepository.save(member);
@@ -140,6 +157,20 @@ public class MemberService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
         return new UserInfoResponseDTO(member);
+    }
+
+    @Transactional
+    public void withdrawMember(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        if (member.isDeleted()) {
+            throw new BadRequestException(ErrorStatus.ALEADY_DELETE_USER_EXCEPTION.getMessage());
+        }
+
+        // 논리적 삭제 처리 및 개인정보 익명화
+        Member updatedMember = member.markAsDeleted();
+        memberRepository.save(updatedMember);
     }
 
 }
