@@ -78,6 +78,7 @@ public class MemoService {
                 .certified(certified)
                 .modify(false)
                 .isHidden(false)
+                .isDeleted(false)
                 .build();
 
         // 이미지 처리
@@ -165,6 +166,11 @@ public class MemoService {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
+        // 삭제된 메모인 경우
+        if (memo.isDeleted()) {
+            throw new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage());
+        }
+
         // 유저가 로그인한 경우 차단한 사용자의 메모라면 조회 못하도록 처리
         if (userDetails != null) {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
@@ -229,7 +235,7 @@ public class MemoService {
 
     // 내가 작성한 메모 조회
     public List<MyMemoListResponseDTO> getMyMemoList(Long userId){
-        List<Memo> myMemos = memoRepository.findMemosByMemberId(userId);
+        List<Memo> myMemos = memoRepository.findByMemberIdAndIsDeletedFalse(userId);
 
         return myMemos.stream()
                 .map(memo -> new MyMemoListResponseDTO(
@@ -244,7 +250,25 @@ public class MemoService {
                 )).collect(Collectors.toList());
     }
 
-    // 메모 삭제
+    // 댓글 삭제(하드삭제)
+//    @Transactional
+//    public void deleteComment(Long commentId, Long userId) {
+//        // 댓글을 ID로 찾고, 존재하지 않으면 예외 처리
+//        Comment comment = commentRepository.findById(commentId)
+//                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+//
+//        // 해당 댓글의 작성자가 요청한 사용자와 동일한지 검증
+//        if (!comment.getMember().getId().equals(userId)) {
+//            throw new UnauthorizedException(ErrorStatus.INVALID_DELETE_AUTH.getMessage());
+//        }
+//
+//        // CommentLike 삭제
+//        commentLikeRepository.deleteAllByCommentId(commentId);
+//
+//        commentRepository.delete(comment);
+//    }
+
+    // 메모 삭제(소프트삭제)
     @Transactional
     public void deleteMemo(Long memoId, Long userId) {
         Memo memo = memoRepository.findById(memoId)
@@ -255,31 +279,10 @@ public class MemoService {
             throw new NotFoundException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
 
-        // 메모에 이미지가 존재한다면 S3 버킷에서 이미지 삭제
-        if (memo.getImages() != null && !memo.getImages().isEmpty()) {
-            for (MemoImage image : memo.getImages()) {
-                s3Service.deleteFile(image.getImageUrl());
-            }
-        }
-
-        // 해당 Memo의 모든 댓글 조회
-        List<Comment> comments = commentRepository.findByMemoId(memoId);
-
-        // 각 댓글의 좋아요(CommentLike) 삭제
-        for (Comment comment : comments) {
-            commentLikeRepository.deleteAllByCommentId(comment.getId());
-        }
-
-        //⃣ 댓글(Comment) 삭제
-        commentRepository.deleteAllByMemoId(memoId);
-
-        // MemoLike, MemoHate 삭제
-        memoLikeRepository.deleteAllByMemoId(memoId);
-        memoHateRepository.deleteAllByMemoId(memoId);
-
-        // 메모 삭제
-        memoRepository.delete(memo);
-        }
+        // 소프트 딜리트 처리
+        memo.softDelete();
+        memoRepository.save(memo);
+    }
 
     // 메모 수정
     public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
