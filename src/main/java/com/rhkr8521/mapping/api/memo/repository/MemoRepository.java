@@ -21,7 +21,7 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
                                      @Param("lng") double lng,
                                      @Param("km") double km);
 
-    List<Memo> findByMemberIdAndIsDeletedFalse(Long memberId);
+    List<Memo> findByMemberIdAndIsDeletedFalseOrderByCreatedAtDesc(Long memberId);
 
     // 좋아요 증가
     @Modifying
