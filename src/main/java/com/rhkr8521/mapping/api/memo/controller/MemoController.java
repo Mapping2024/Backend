@@ -163,7 +163,8 @@ public class MemoController {
     @DeleteMapping("/delete/{memoId}")
     public ResponseEntity<ApiResponse<Void>> deleteMemo(
             @PathVariable Long memoId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request
     ) {
 
         // 필수 입력 값 누락 체크
@@ -172,7 +173,7 @@ public class MemoController {
         }
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-        memoService.deleteMemo(memoId, userId);
+        memoService.deleteMemo(memoId, userId, request);
 
         return ApiResponse.success_only(SuccessStatus.DELETE_MEMO_SUCCESS);
     }
@@ -223,7 +224,7 @@ public class MemoController {
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
 
-        memoService.updateMemo(memoId, userId, memoUpdateRequestDTO, images, deleteImageUrls);
+        memoService.updateMemo(memoId, userId, memoUpdateRequestDTO, images, deleteImageUrls, request);
 
         return ApiResponse.success_only(SuccessStatus.UPDATE_MEMO_SUCCESS);
     }

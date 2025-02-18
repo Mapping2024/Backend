@@ -32,7 +32,8 @@ public class Memo extends BaseTimeEntity {
     private String category;
     private long likeCnt;
     private long hateCnt;
-    private String ip;
+    private String createIp;
+    private String lastModifyIp;
     private boolean secret;
     private boolean certified;
     private boolean modify;
@@ -64,10 +65,6 @@ public class Memo extends BaseTimeEntity {
                     .build();
             this.images.add(image);
         }
-    }
-
-    public void softDelete() {
-        this.isDeleted = true;
     }
 
 }

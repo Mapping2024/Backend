@@ -25,6 +25,8 @@ public class Comment extends BaseTimeEntity {
     private int rating;
     private int likeCnt;
     private boolean modify;
+    private String createIp;
+    private String lastModifyIp;
     private boolean isHidden;
     private boolean isDeleted;
 
@@ -36,7 +38,4 @@ public class Comment extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private Member member;
 
-    public void softDelete() {
-        this.isDeleted = true;
-    }
 }
