@@ -1,8 +1,8 @@
 package com.rhkr8521.mapping.api.member.controller;
 
 import com.rhkr8521.mapping.api.member.dto.*;
-import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
+import com.rhkr8521.mapping.api.member.service.AppleService;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.member.service.OAuthService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
@@ -23,9 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Tag(name = "Member", description = "Member 관련 API 입니다.")
 @RestController
@@ -35,6 +35,7 @@ public class MemberController {
 
     private final MemberService memberService;
     private final OAuthService oauthService;
+    private final AppleService appleService;
     private final JwtService jwtService;
 
     @Hidden
@@ -50,7 +51,7 @@ public class MemberController {
     }
 
     @Operation(
-            summary = "로그인 API",
+            summary = "카카오로그인 API",
             description = "카카오 엑세스토큰을 통해 사용자의 정보를 등록 및 토큰을 발급합니다. (ROLE -> 일반사용자 : USER, 관리자 : ADMIN)"
     )
     @ApiResponses({
@@ -66,6 +67,39 @@ public class MemberController {
         }
 
         Map<String, Object> response = memberService.loginWithKakao(kakaoLoginRequest.getAccessToken());
+        return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "Apple 로그인 API",
+            description = "Apple OAuth authorization code를 통해 사용자의 정보를 등록 및 토큰을 발급합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Apple authorization code가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Apple 소셜 로그인 중 오류 발생")
+    })
+    @PostMapping("/apple-login")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> loginWithApple(@RequestParam("code") String code) {
+        if (code == null || code.isEmpty()) {
+            throw new BadRequestException("Apple authorization code가 입력되지 않았습니다.");
+        }
+        AppleDTO appleInfo;
+        try {
+            appleInfo = appleService.getAppleInfo(code);
+        } catch (Exception e) {
+            throw new InternalServerException("Apple 소셜 로그인 중 오류 발생: " + e.getMessage());
+        }
+        // Apple 사용자 정보를 통해 회원가입 또는 로그인 처리
+        var member = memberService.registerOrLoginAppleUser(appleInfo);
+        // 토큰 발급
+        Map<String, String> tokens = jwtService.createAccessAndRefreshToken(member.getEmail());
+        Map<String, Object> response = new HashMap<>();
+        response.put("tokens", tokens);
+        response.put("role", member.getRole());
+        response.put("nickname", member.getNickname());
+        response.put("profileImage", member.getImageUrl());
+        response.put("socialId", member.getSocialId());
         return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
     }
 

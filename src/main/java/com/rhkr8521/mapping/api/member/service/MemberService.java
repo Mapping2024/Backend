@@ -1,6 +1,7 @@
 package com.rhkr8521.mapping.api.member.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
+import com.rhkr8521.mapping.api.member.dto.AppleDTO;
 import com.rhkr8521.mapping.api.member.dto.BlockedUserResponseDTO;
 import com.rhkr8521.mapping.api.member.dto.KakaoUserInfoDTO;
 import com.rhkr8521.mapping.api.member.dto.UserInfoResponseDTO;
@@ -47,6 +48,35 @@ public class MemberService {
             "부엉이", "참새", "독수리", "오리", "거북이", "물개", "돌고래", "고래", "불가사리", "미어캣",
             "해파리", "코알라", "낙타", "아기돼지", "강치", "이구아나", "오징어", "문어", "갈매기", "오소리"
     );
+
+    @Transactional
+    public Member registerOrLoginAppleUser(AppleDTO appleUserInfo) {
+        Optional<Member> optionalMember = memberRepository.findBySocialId(appleUserInfo.getId());
+        if (optionalMember.isPresent()) {
+            Member member = optionalMember.get();
+            // 탈퇴한 회원인 경우 복구 처리
+            if (member.isDeleted()) {
+                member = member.toBuilder()
+                        .deleted(false)
+                        .deletedAt(null)
+                        .build();
+                memberRepository.save(member);
+            }
+            return member;
+        } else {
+            Member member = Member.builder()
+                    .socialId(appleUserInfo.getId())
+                    .email(appleUserInfo.getEmail() != null ? appleUserInfo.getEmail() : UUID.randomUUID() + "@socialUser.com")
+                    .nickname(generateRandomNickname())
+                    .imageUrl(null)
+                    .role(Role.USER)
+                    .deleted(false)
+                    .deletedAt(null)
+                    .build();
+            memberRepository.save(member);
+            return member;
+        }
+    }
 
     private static String generateRandomNickname() {
         Random random = new Random();
