@@ -37,6 +37,7 @@ public class Memo extends BaseTimeEntity {
     private boolean certified;
     private boolean modify;
     private boolean isHidden;
+    private boolean isDeleted;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -63,6 +64,10 @@ public class Memo extends BaseTimeEntity {
                     .build();
             this.images.add(image);
         }
+    }
+
+    public void softDelete() {
+        this.isDeleted = true;
     }
 
 }

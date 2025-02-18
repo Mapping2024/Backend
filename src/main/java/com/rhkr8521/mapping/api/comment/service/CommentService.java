@@ -52,6 +52,8 @@ public class CommentService {
                 .rating(commentCreateDTO.getRating())
                 .likeCnt(0)
                 .modify(false)
+                .isDeleted(false)
+                .isHidden(false)
                 .build();
 
         commentRepository.save(comment);
@@ -111,7 +113,25 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
-    // 댓글 삭제
+    // 댓글 삭제(하드삭제)
+//    @Transactional
+//    public void deleteComment(Long commentId, Long userId) {
+//        // 댓글을 ID로 찾고, 존재하지 않으면 예외 처리
+//        Comment comment = commentRepository.findById(commentId)
+//                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+//
+//        // 해당 댓글의 작성자가 요청한 사용자와 동일한지 검증
+//        if (!comment.getMember().getId().equals(userId)) {
+//            throw new UnauthorizedException(ErrorStatus.INVALID_DELETE_AUTH.getMessage());
+//        }
+//
+//        // CommentLike 삭제
+//        commentLikeRepository.deleteAllByCommentId(commentId);
+//
+//        commentRepository.delete(comment);
+//    }
+
+    // 댓글 삭제(소프트삭제)
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
         // 댓글을 ID로 찾고, 존재하지 않으면 예외 처리
@@ -123,10 +143,9 @@ public class CommentService {
             throw new UnauthorizedException(ErrorStatus.INVALID_DELETE_AUTH.getMessage());
         }
 
-        // CommentLike 삭제
-        commentLikeRepository.deleteAllByCommentId(commentId);
-
-        commentRepository.delete(comment);
+        // 소프트딜리트 처리
+        comment.softDelete();
+        commentRepository.save(comment);
     }
 
     // 좋아요 토글

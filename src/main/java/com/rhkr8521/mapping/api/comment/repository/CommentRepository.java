@@ -15,7 +15,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByMemoId(Long memoId);  // 특정 메모의 댓글 찾기
     void deleteAllByMemoId(Long memoId);
 
-    @Query("SELECT DISTINCT c.memo FROM Comment c WHERE c.member.id = :userId")
+    @Query("SELECT DISTINCT c.memo FROM Comment c WHERE c.member.id = :userId AND c.memo.isDeleted = false")
     List<Memo> findDistinctMemoByMemberId(@Param("userId") Long userId);
 
     // 좋아요 수 증가

@@ -15,6 +15,7 @@ public interface MemoLikeRepository extends JpaRepository<MemoLike, Long> {
     Optional<MemoLike> findByMemoIdAndMemberId(Long memoId, Long memberId);
     void deleteAllByMemoId(Long memoId);
 
-    @Query("SELECT ml.memo FROM MemoLike ml WHERE ml.member.id = :userId")
+    @Query("SELECT m FROM MemoLike ml JOIN ml.memo m WHERE ml.member.id = :userId AND m.isDeleted = false")
     List<Memo> findMemosByMemberId(@Param("userId") Long userId);
+
 }

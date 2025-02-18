@@ -13,14 +13,15 @@ import java.util.List;
 public interface MemoRepository extends JpaRepository<Memo, Long> {
 
     @Query(value = "SELECT * FROM memo m " +
-            "WHERE (6371 * acos(cos(radians(:lat)) * cos(radians(m.lat)) * " +
+            "WHERE m.is_deleted = false " +
+            "AND (6371 * acos(cos(radians(:lat)) * cos(radians(m.lat)) * " +
             "cos(radians(m.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(m.lat)))) <= :km",
             nativeQuery = true)
     List<Memo> findMemosWithinRadius(@Param("lat") double lat,
                                      @Param("lng") double lng,
                                      @Param("km") double km);
 
-    List<Memo> findMemosByMemberId(Long memberId);
+    List<Memo> findByMemberIdAndIsDeletedFalse(Long memberId);
 
     // 좋아요 증가
     @Modifying

@@ -22,6 +22,23 @@ public class CommentResponseDTO {
 
     public static CommentResponseDTO fromEntity(Comment comment, boolean myLike) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        // 삭제된 댓글인 경우 처리
+        if(comment.isDeleted()) {
+            return CommentResponseDTO.builder()
+                    .id(comment.getId())
+                    .comment("삭제된 댓글입니다.")
+                    .rating(comment.getRating())
+                    .likeCnt(comment.getLikeCnt())
+                    .nickname("(알수없음)")
+                    .profileImageUrl(null)
+                    .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
+                    .myLike(false)
+                    .modify(comment.isModify())
+                    .build();
+        }
+
+        // 삭제되지 않은 일반 댓글의 경우
         String nickname = comment.getMember().isDeleted() ? "(알수없음)" : comment.getMember().getNickname();
         return CommentResponseDTO.builder()
                 .id(comment.getId())

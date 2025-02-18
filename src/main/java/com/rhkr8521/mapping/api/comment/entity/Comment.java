@@ -25,6 +25,8 @@ public class Comment extends BaseTimeEntity {
     private int rating;
     private int likeCnt;
     private boolean modify;
+    private boolean isHidden;
+    private boolean isDeleted;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "memo_id")
@@ -34,4 +36,7 @@ public class Comment extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private Member member;
 
+    public void softDelete() {
+        this.isDeleted = true;
+    }
 }
