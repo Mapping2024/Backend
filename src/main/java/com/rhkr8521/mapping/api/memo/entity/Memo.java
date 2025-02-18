@@ -36,6 +36,7 @@ public class Memo extends BaseTimeEntity {
     private boolean secret;
     private boolean certified;
     private boolean modify;
+    private boolean isHidden;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

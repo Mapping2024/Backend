@@ -77,6 +77,7 @@ public class MemoService {
                 .secret(memoRequest.isSecret())
                 .certified(certified)
                 .modify(false)
+                .isHidden(false)
                 .build();
 
         // 이미지 처리
