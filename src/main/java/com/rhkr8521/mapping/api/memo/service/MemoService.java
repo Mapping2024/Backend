@@ -8,12 +8,10 @@ import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.dto.*;
-import com.rhkr8521.mapping.api.memo.entity.Memo;
-import com.rhkr8521.mapping.api.memo.entity.MemoHate;
-import com.rhkr8521.mapping.api.memo.entity.MemoImage;
-import com.rhkr8521.mapping.api.memo.entity.MemoLike;
+import com.rhkr8521.mapping.api.memo.entity.*;
 import com.rhkr8521.mapping.api.memo.repository.MemoHateRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoLikeRepository;
+import com.rhkr8521.mapping.api.memo.repository.MemoReportRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
@@ -41,6 +39,7 @@ public class MemoService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final MemberRepository memberRepository;
+    private final MemoReportRepository memoReportRepository;
     private final MemberService memberService;
     private final S3Service s3Service;
 
@@ -427,6 +426,36 @@ public class MemoService {
                 .hateCnt(memo.getHateCnt())
                 .images(imageUrls)
                 .build();
+    }
+
+    // 메모 신고 기능
+    @Transactional
+    public void reportMemo(MemoReportRequestDTO reportRequest, UserDetails userDetails) {
+        if(reportRequest.getMemoId() == null || reportRequest.getReportReason() == null) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
+        }
+
+        // 신고할 메모 조회
+        Memo memo = memoRepository.findById(reportRequest.getMemoId())
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 신고하는 회원 조회
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 이미 신고한 내역이 있는지 체크
+        if (memoReportRepository.existsByMemoAndMember(memo, member)) {
+            throw new BadRequestException(ErrorStatus.ALREADY_REPORT_MEMO_EXCEPTION.getMessage());
+        }
+
+        MemoReport memoReport = MemoReport.builder()
+                .memo(memo)
+                .member(member)
+                .reportReason(reportRequest.getReportReason())
+                .build();
+
+        memoReportRepository.save(memoReport);
     }
 
 }

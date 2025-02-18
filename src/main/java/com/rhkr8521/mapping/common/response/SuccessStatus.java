@@ -35,6 +35,8 @@ public enum SuccessStatus {
     SEND_COMMENT_DETAIL_SUCCESS(HttpStatus.OK,"댓글 상세 조회 성공"),
     MODIFY_COMMENT_SUCCESS(HttpStatus.OK,"댓글 수정 성공"),
     DELETE_COMMENT_SUCCESS(HttpStatus.OK,"댓글 삭제 상공"),
+
+    REPORT_MEMO_SUCCESS(HttpStatus.OK,"메모 신고 성공"),
     /**
      * 201
      */
