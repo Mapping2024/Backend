@@ -8,7 +8,7 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.rhkr8521.mapping.api.member.dto.AppleDTO;
+import com.rhkr8521.mapping.api.member.dto.AppleLoginDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
@@ -54,7 +54,7 @@ public class AppleService {
     /**
      * Apple authorization code를 받아 토큰 교환 후 사용자 정보를 파싱
      */
-    public AppleDTO getAppleInfo(String code) throws Exception {
+    public AppleLoginDTO getAppleInfo(String code) throws Exception {
         if (code == null) throw new Exception("authorization code가 없습니다.");
 
         String clientSecret = createClientSecret();
@@ -101,7 +101,7 @@ public class AppleService {
             throw new Exception("Apple API 호출 실패", e);
         }
 
-        return AppleDTO.builder()
+        return AppleLoginDTO.builder()
                 .id(userId)
                 .token(accessToken)
                 .email(email)

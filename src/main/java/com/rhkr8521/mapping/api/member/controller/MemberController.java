@@ -35,7 +35,6 @@ public class MemberController {
 
     private final MemberService memberService;
     private final OAuthService oauthService;
-    private final AppleService appleService;
     private final JwtService jwtService;
 
     @Hidden
@@ -70,36 +69,23 @@ public class MemberController {
         return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
     }
 
+    @Hidden
     @Operation(
             summary = "Apple 로그인 API",
-            description = "Apple OAuth authorization code를 통해 사용자의 정보를 등록 및 토큰을 발급합니다."
+            description = "Apple Authorization Code를 통해 사용자의 정보를 등록 및 토큰을 발급합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Apple authorization code가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Apple Authorization Code가 입력되지 않았습니다."),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Apple 소셜 로그인 중 오류 발생")
     })
     @PostMapping("/apple-login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> loginWithApple(@RequestParam("code") String code) {
         if (code == null || code.isEmpty()) {
-            throw new BadRequestException("Apple authorization code가 입력되지 않았습니다.");
+            throw new BadRequestException(ErrorStatus.MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION.getMessage());
         }
-        AppleDTO appleInfo;
-        try {
-            appleInfo = appleService.getAppleInfo(code);
-        } catch (Exception e) {
-            throw new InternalServerException("Apple 소셜 로그인 중 오류 발생: " + e.getMessage());
-        }
-        // Apple 사용자 정보를 통해 회원가입 또는 로그인 처리
-        var member = memberService.registerOrLoginAppleUser(appleInfo);
-        // 토큰 발급
-        Map<String, String> tokens = jwtService.createAccessAndRefreshToken(member.getEmail());
-        Map<String, Object> response = new HashMap<>();
-        response.put("tokens", tokens);
-        response.put("role", member.getRole());
-        response.put("nickname", member.getNickname());
-        response.put("profileImage", member.getImageUrl());
-        response.put("socialId", member.getSocialId());
+
+        Map<String, Object> response = memberService.loginWithApple(code);
         return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
     }
 
