@@ -338,10 +338,11 @@ public class MemoService {
     }
 
     // 좋아요 토글
+    @Transactional
     public void toggleLike(Long memoId, Long userId) {
+        // 메모와 회원 존재 여부 체크
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
-
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
@@ -349,34 +350,32 @@ public class MemoService {
         Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
 
         if (existingLike.isPresent()) {
-            // 좋아요를 취소
+            // 좋아요 취소
             memoLikeRepository.delete(existingLike.get());
-            memo = memo.decreaseLikeCnt();
+            memoRepository.decrementLikeCount(memoId);
         } else {
-            // 싫어요를 취소 (상호 배타성 보장)
+            // 싫어요 상태 확인 (상호 배타성 보장)
             Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
             if (existingHate.isPresent()) {
                 memoHateRepository.delete(existingHate.get());
-                memo = memo.decreaseHateCnt();
+                memoRepository.decrementHateCount(memoId);
             }
-
             // 좋아요 추가
             MemoLike memoLike = MemoLike.builder()
                     .memo(memo)
                     .member(member)
                     .build();
             memoLikeRepository.save(memoLike);
-            memo = memo.increaseLikeCnt();
+            memoRepository.incrementLikeCount(memoId);
         }
-
-        memoRepository.save(memo);
     }
 
     // 싫어요 토글
+    @Transactional
     public void toggleHate(Long memoId, Long userId) {
+        // 메모와 회원 존재 여부 체크
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
-
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
@@ -384,27 +383,24 @@ public class MemoService {
         Optional<MemoHate> existingHate = memoHateRepository.findByMemoIdAndMemberId(memoId, userId);
 
         if (existingHate.isPresent()) {
-            // 싫어요를 취소
+            // 싫어요 취소
             memoHateRepository.delete(existingHate.get());
-            memo = memo.decreaseHateCnt();
+            memoRepository.decrementHateCount(memoId);
         } else {
-            // 좋아요를 취소 (상호 배타성 보장)
+            // 좋아요 상태 확인 (상호 배타성 보장)
             Optional<MemoLike> existingLike = memoLikeRepository.findByMemoIdAndMemberId(memoId, userId);
             if (existingLike.isPresent()) {
                 memoLikeRepository.delete(existingLike.get());
-                memo = memo.decreaseLikeCnt();
+                memoRepository.decrementLikeCount(memoId);
             }
-
             // 싫어요 추가
             MemoHate memoHate = MemoHate.builder()
                     .memo(memo)
                     .member(member)
                     .build();
             memoHateRepository.save(memoHate);
-            memo = memo.increaseHateCnt();
+            memoRepository.incrementHateCount(memoId);
         }
-
-        memoRepository.save(memo);
     }
 
     // 내가 댓글 작성한 메모 목록 조회

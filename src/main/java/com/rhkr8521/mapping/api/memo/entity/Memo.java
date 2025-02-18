@@ -64,31 +64,4 @@ public class Memo extends BaseTimeEntity {
         }
     }
 
-    // 좋아요 증가
-    public Memo increaseLikeCnt() {
-        return this.toBuilder()
-                .likeCnt(this.likeCnt + 1)
-                .build();
-    }
-
-    // 좋아요 감소
-    public Memo decreaseLikeCnt() {
-        return this.toBuilder()
-                .likeCnt(this.likeCnt - 1)
-                .build();
-    }
-
-    // 싫어요 증가
-    public Memo increaseHateCnt() {
-        return this.toBuilder()
-                .hateCnt(this.hateCnt + 1)
-                .build();
-    }
-
-    // 싫어요 감소
-    public Memo decreaseHateCnt() {
-        return this.toBuilder()
-                .hateCnt(this.hateCnt - 1)
-                .build();
-    }
 }

@@ -130,7 +130,9 @@ public class CommentService {
     }
 
     // 좋아요 토글
+    @Transactional
     public void toggleLike(Long commentId, Long userId) {
+        // 댓글과 회원 존재 여부 체크
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
 
@@ -143,7 +145,7 @@ public class CommentService {
         if (existingLike.isPresent()) {
             // 좋아요 취소
             commentLikeRepository.delete(existingLike.get());
-            comment = comment.decreaseLikeCnt();
+            commentRepository.decrementLikeCount(commentId);
         } else {
             // 좋아요 추가
             CommentLike articleLike = CommentLike.builder()
@@ -151,10 +153,8 @@ public class CommentService {
                     .member(member)
                     .build();
             commentLikeRepository.save(articleLike);
-            comment = comment.increaseLikeCnt();
+            commentRepository.incrementLikeCount(commentId);
         }
-
-        commentRepository.save(comment);
     }
 
 }

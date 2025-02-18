@@ -34,17 +34,4 @@ public class Comment extends BaseTimeEntity {
     @JoinColumn(name = "user_id")
     private Member member;
 
-    // 좋아요 증가
-    public Comment increaseLikeCnt() {
-        return this.toBuilder()
-                .likeCnt(this.likeCnt + 1)
-                .build();
-    }
-
-    // 좋아요 감소
-    public Comment decreaseLikeCnt() {
-        return this.toBuilder()
-                .likeCnt(this.likeCnt - 1)
-                .build();
-    }
 }
