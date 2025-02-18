@@ -234,7 +234,7 @@ public class MemoService {
 
     // 내가 작성한 메모 조회
     public List<MyMemoListResponseDTO> getMyMemoList(Long userId){
-        List<Memo> myMemos = memoRepository.findByMemberIdAndIsDeletedFalse(userId);
+        List<Memo> myMemos = memoRepository.findByMemberIdAndIsDeletedFalseOrderByCreatedAtDesc(userId);
 
         return myMemos.stream()
                 .map(memo -> new MyMemoListResponseDTO(
