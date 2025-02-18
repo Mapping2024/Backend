@@ -32,6 +32,7 @@ public enum ErrorStatus {
     CANT_ACCESS_BLOCK_USER_MEMO_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자의 메모는 조회할 수 없습니다."),
     ALREADY_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"이미 차단한 사용자입니다."),
     NOT_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자가 아닙니다."),
+    MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION(HttpStatus.BAD_REQUEST,"Apple Authorization Code가 입력되지 않았습니다."),
 
     /**
      * 401 UNAUTHORIZED
@@ -57,6 +58,7 @@ public enum ErrorStatus {
     FAIL_UPLOAD_PROFILE_IMAGE(HttpStatus.INTERNAL_SERVER_ERROR, "프로필 사진이 변경되지 않았습니다."),
     FAIL_REQUEST_KAKAO_USER_INFO(HttpStatus.INTERNAL_SERVER_ERROR, "카카오 사용자 정보 요청 중 오류가 발생했습니다."),
     FAIL_PARSE_KAKAO_USER_INFO(HttpStatus.INTERNAL_SERVER_ERROR, "카카오 사용자 정보를 가져오지 못했습니다."),
+    FAIL_ACCESS_APPLE_OAUTH_SERVICE(HttpStatus.INTERNAL_SERVER_ERROR,"Apple 소셜 로그인 중 오류 발생:"),
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류"),
 
     ;

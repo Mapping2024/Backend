@@ -1,7 +1,7 @@
 package com.rhkr8521.mapping.api.member.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
-import com.rhkr8521.mapping.api.member.dto.AppleDTO;
+import com.rhkr8521.mapping.api.member.dto.AppleLoginDTO;
 import com.rhkr8521.mapping.api.member.dto.BlockedUserResponseDTO;
 import com.rhkr8521.mapping.api.member.dto.KakaoUserInfoDTO;
 import com.rhkr8521.mapping.api.member.dto.UserInfoResponseDTO;
@@ -33,6 +33,7 @@ public class MemberService {
     private final JwtService jwtService;
     private final OAuthService oAuthService;
     private final S3Service s3Service;
+    private final AppleService appleService;
     private final MemberBlockRepository memberBlockRepository;
 
     private static final List<String> FIRST_WORDS = Arrays.asList(
@@ -48,35 +49,6 @@ public class MemberService {
             "부엉이", "참새", "독수리", "오리", "거북이", "물개", "돌고래", "고래", "불가사리", "미어캣",
             "해파리", "코알라", "낙타", "아기돼지", "강치", "이구아나", "오징어", "문어", "갈매기", "오소리"
     );
-
-    @Transactional
-    public Member registerOrLoginAppleUser(AppleDTO appleUserInfo) {
-        Optional<Member> optionalMember = memberRepository.findBySocialId(appleUserInfo.getId());
-        if (optionalMember.isPresent()) {
-            Member member = optionalMember.get();
-            // 탈퇴한 회원인 경우 복구 처리
-            if (member.isDeleted()) {
-                member = member.toBuilder()
-                        .deleted(false)
-                        .deletedAt(null)
-                        .build();
-                memberRepository.save(member);
-            }
-            return member;
-        } else {
-            Member member = Member.builder()
-                    .socialId(appleUserInfo.getId())
-                    .email(appleUserInfo.getEmail() != null ? appleUserInfo.getEmail() : UUID.randomUUID() + "@socialUser.com")
-                    .nickname(generateRandomNickname())
-                    .imageUrl(null)
-                    .role(Role.USER)
-                    .deleted(false)
-                    .deletedAt(null)
-                    .build();
-            memberRepository.save(member);
-            return member;
-        }
-    }
 
     private static String generateRandomNickname() {
         Random random = new Random();
@@ -150,6 +122,59 @@ public class MemberService {
         memberRepository.save(member);
 
         return member;
+    }
+
+    @Transactional
+    public Map<String, Object> loginWithApple(String code) {
+        if (code == null || code.isEmpty()) {
+            throw new BadRequestException(ErrorStatus.MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION.getMessage());
+        }
+        AppleLoginDTO appleInfo;
+        try {
+            appleInfo = appleService.getAppleInfo(code);
+        } catch (Exception e) {
+            throw new BadRequestException(ErrorStatus.FAIL_ACCESS_APPLE_OAUTH_SERVICE.getMessage() + e.getMessage());
+        }
+        // Apple 사용자 정보를 통한 회원가입 또는 로그인 처리
+        Member member = registerOrLoginAppleUser(appleInfo);
+        // JWT 토큰 발급
+        Map<String, String> tokens = jwtService.createAccessAndRefreshToken(member.getEmail());
+        Map<String, Object> response = new HashMap<>();
+        response.put("tokens", tokens);
+        response.put("role", member.getRole());
+        response.put("nickname", member.getNickname());
+        response.put("profileImage", member.getImageUrl());
+        return response;
+    }
+
+    // 애플 사용자 정보를 사용해 회원가입 또는 로그인 처리
+    @Transactional
+    public Member registerOrLoginAppleUser(AppleLoginDTO appleUserInfo) {
+        Optional<Member> optionalMember = memberRepository.findBySocialId(appleUserInfo.getId());
+        if (optionalMember.isPresent()) {
+            Member member = optionalMember.get();
+            // 탈퇴한 회원 복구 처리
+            if (member.isDeleted()) {
+                member = member.toBuilder()
+                        .deleted(false)
+                        .deletedAt(null)
+                        .build();
+                memberRepository.save(member);
+            }
+            return member;
+        } else {
+            Member member = Member.builder()
+                    .socialId(appleUserInfo.getId())
+                    .email(appleUserInfo.getEmail() != null ? appleUserInfo.getEmail() : UUID.randomUUID() + "@socialUser.com")
+                    .nickname(generateRandomNickname())
+                    .imageUrl(null)
+                    .role(Role.USER)
+                    .deleted(false)
+                    .deletedAt(null)
+                    .build();
+            memberRepository.save(member);
+            return member;
+        }
     }
 
     @Transactional(readOnly = true)

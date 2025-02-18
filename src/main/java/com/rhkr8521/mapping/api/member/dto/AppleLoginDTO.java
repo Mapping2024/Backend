@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class AppleDTO {
+public class AppleLoginDTO {
     private String id;
     private String token;
     private String email;
