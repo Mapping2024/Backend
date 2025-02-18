@@ -317,6 +317,7 @@ public class MemoService {
                 .likeCnt(memo.getLikeCnt())
                 .hateCnt(memo.getHateCnt())
                 .lastModifyIp(clientIp)
+                .createIp(memo.getCreateIp())
                 .images(new ArrayList<>(memo.getImages()))
                 .modify(true)
                 .build();
