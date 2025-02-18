@@ -52,6 +52,8 @@ public class CommentService {
                 .rating(commentCreateDTO.getRating())
                 .likeCnt(0)
                 .modify(false)
+                .isDeleted(false)
+                .isHidden(false)
                 .build();
 
         commentRepository.save(comment);
