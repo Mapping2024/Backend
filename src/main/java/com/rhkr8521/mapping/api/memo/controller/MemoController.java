@@ -64,7 +64,7 @@ public class MemoController {
         // 이미지 파일 검증
         if (images != null && !images.isEmpty()) {
             for (MultipartFile image : images) {
-                if (!isImageFile(image)) {
+                if (isImageFile(image)) {
                     throw new BadRequestException(ErrorStatus.NOT_ALLOW_IMG_MIME.getMessage());
                 }
             }
@@ -209,7 +209,7 @@ public class MemoController {
         // 이미지 파일 검증
         if (images != null && !images.isEmpty()) {
             for (MultipartFile image : images) {
-                if (!isImageFile(image)) {
+                if (isImageFile(image)) {
                     throw new BadRequestException(ErrorStatus.NOT_ALLOW_IMG_MIME.getMessage());
                 }
             }
@@ -294,16 +294,46 @@ public class MemoController {
         return ApiResponse.success(SuccessStatus.SEND_TOTAL_MEMO_SUCCESS, memos);
     }
 
+    @Operation(
+            summary = "메모 신고 API",
+            description = "해당 메모를 신고합니다. <br>" +
+            "<p>" +
+            "신고 사유 리스트 :<br>" +
+                    "SPAM: 스팸홍보/도배글입니다.<br>" +
+                    "OBSCENE: 음란물입니다.<br>" +
+                    "ILLEGAL_INFORMATION: 불법정보를 포함하고 있습니다.<br>" +
+                    "HARMFUL_TO_MINORS: 청소년에게 유해한 내용입니다.<br>" +
+                    "OFFENSIVE_EXPRESSION: 욕설/생명경시/혐오/차벌적 표현입니다.<br>" +
+                    "PRIVACY_EXPOSURE: 개인정보 노출 게시물입니다.<br>" +
+                    "UNPLEASANT_EXPRESSION: 불쾌한 표현이 있습니다.<br>" +
+                    "OTHER: 기타"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 신고 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "해당 메모는 이미 신고처리 되었습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다.")
+    })
+    @PostMapping("/report")
+    public ResponseEntity<ApiResponse<Void>> reportMemo(
+            @RequestBody MemoReportRequestDTO memoReportRequestDTO,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        if (memoReportRequestDTO.getMemoId() == null || memoReportRequestDTO.getReportReason() == null) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
+        }
+
+        memoService.reportMemo(memoReportRequestDTO, userDetails);
+        return ApiResponse.success_only(SuccessStatus.REPORT_MEMO_SUCCESS);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         // 허용되는 이미지 MIME 타입
         String contentType = file.getContentType();
-        return contentType != null && (
-                contentType.equals("image/jpeg") ||
-                        contentType.equals("image/png") ||
-                        contentType.equals("image/jpg") ||
-                        contentType.equals("image/bmp") ||
-                        contentType.equals("image/webp")
-        );
+        return contentType == null || (!contentType.equals("image/jpeg") &&
+                !contentType.equals("image/png") &&
+                !contentType.equals("image/jpg") &&
+                !contentType.equals("image/bmp") &&
+                !contentType.equals("image/webp"));
     }
 
     private boolean isNullOrEmpty(String str) {

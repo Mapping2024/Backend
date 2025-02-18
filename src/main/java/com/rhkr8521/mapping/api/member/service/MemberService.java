@@ -165,7 +165,7 @@ public class MemberService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
 
         if (member.isDeleted()) {
-            throw new BadRequestException(ErrorStatus.ALEADY_DELETE_USER_EXCEPTION.getMessage());
+            throw new BadRequestException(ErrorStatus.ALREADY_DELETE_USER_EXCEPTION.getMessage());
         }
 
         // 논리적 삭제 처리 및 개인정보 익명화
