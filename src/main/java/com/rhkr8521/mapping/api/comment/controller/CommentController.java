@@ -12,6 +12,7 @@ import com.rhkr8521.mapping.common.response.ErrorStatus;
 import com.rhkr8521.mapping.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,7 +42,8 @@ public class CommentController {
     @PostMapping("/new")
     public ResponseEntity<ApiResponse<Void>> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
-            CommentCreateDTO commentCreateDTO
+            CommentCreateDTO commentCreateDTO,
+            HttpServletRequest request
     ) {
 
         // Comment 누락시 예외처리
@@ -55,7 +57,7 @@ public class CommentController {
         }
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-        commentService.createComment(commentCreateDTO, userId);
+        commentService.createComment(commentCreateDTO, userId, request);
 
         return ApiResponse.success_only(SuccessStatus.CREATE_COMMENT_SUCCESS);
     }
@@ -120,7 +122,8 @@ public class CommentController {
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @PathVariable Long commentId,
             @RequestBody CommentUpdateDTO commentUpdateDTO,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request
     ) {
         //댓글 ID 누락시 예외처리
         if (commentId == null) {
@@ -133,7 +136,7 @@ public class CommentController {
         }
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-        commentService.updateComment(commentId, commentUpdateDTO, userId);
+        commentService.updateComment(commentId, commentUpdateDTO, userId, request);
 
         return ApiResponse.success_only(SuccessStatus.MODIFY_COMMENT_SUCCESS);
     }
@@ -150,7 +153,8 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable Long commentId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request
     ) {
         //댓글 ID 누락시 예외처리
         if (commentId == null) {
@@ -158,7 +162,7 @@ public class CommentController {
         }
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-        commentService.deleteComment(commentId, userId);
+        commentService.deleteComment(commentId, userId, request);
 
         return ApiResponse.success_only(SuccessStatus.DELETE_COMMENT_SUCCESS);
     }

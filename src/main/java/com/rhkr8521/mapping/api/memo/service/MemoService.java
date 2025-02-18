@@ -1,7 +1,6 @@
 package com.rhkr8521.mapping.api.memo.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
-import com.rhkr8521.mapping.api.comment.entity.Comment;
 import com.rhkr8521.mapping.api.comment.repository.CommentLikeRepository;
 import com.rhkr8521.mapping.api.comment.repository.CommentRepository;
 import com.rhkr8521.mapping.api.member.entity.Member;
@@ -38,7 +37,6 @@ public class MemoService {
     private final MemoLikeRepository memoLikeRepository;
     private final MemoHateRepository memoHateRepository;
     private final CommentRepository commentRepository;
-    private final CommentLikeRepository commentLikeRepository;
     private final MemberRepository memberRepository;
     private final MemoReportRepository memoReportRepository;
     private final MemberService memberService;
@@ -73,7 +71,8 @@ public class MemoService {
                 .category(memoRequest.getCategory())
                 .likeCnt(0)
                 .hateCnt(0)
-                .ip(clientIp)
+                .createIp(clientIp)
+                .lastModifyIp(null)
                 .secret(memoRequest.isSecret())
                 .certified(certified)
                 .modify(false)
@@ -270,7 +269,7 @@ public class MemoService {
 
     // 메모 삭제(소프트삭제)
     @Transactional
-    public void deleteMemo(Long memoId, Long userId) {
+    public void deleteMemo(Long memoId, Long userId, HttpServletRequest request) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
@@ -279,14 +278,21 @@ public class MemoService {
             throw new NotFoundException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
 
-        // 소프트 딜리트 처리
-        memo.softDelete();
-        memoRepository.save(memo);
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
+
+        Memo deletedMemo = memo.toBuilder()
+                .isDeleted(true)
+                .lastModifyIp(clientIp)
+                .build();
+
+        memoRepository.save(deletedMemo);
     }
 
     // 메모 수정
     public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
-                           List<MultipartFile> newImages, List<String> deleteImageUrls) throws IOException {
+                           List<MultipartFile> newImages, List<String> deleteImageUrls,
+                           HttpServletRequest request) throws IOException {
 
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
@@ -295,6 +301,9 @@ public class MemoService {
         if (!memo.getMember().getId().equals(userId)) {
             throw new BadRequestException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
+
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
 
         // 메모 정보 업데이트 (Builder 패턴 사용)
         Memo updatedMemo = Memo.builder()
@@ -307,7 +316,7 @@ public class MemoService {
                 .category(memoRequest.getCategory())
                 .likeCnt(memo.getLikeCnt())
                 .hateCnt(memo.getHateCnt())
-                .ip(memo.getIp())
+                .lastModifyIp(clientIp)
                 .images(new ArrayList<>(memo.getImages()))
                 .modify(true)
                 .build();

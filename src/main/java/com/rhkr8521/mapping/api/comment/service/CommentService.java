@@ -15,6 +15,7 @@ import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.exception.UnauthorizedException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -35,15 +36,34 @@ public class CommentService {
     private final MemberRepository memberRepository;
     private final MemberService memberService;
 
+    // 클라이언트 IP 추출 메소드
+    private String extractClientIp(HttpServletRequest request) {
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+            clientIp = request.getHeader("Proxy-Client-IP");
+        }
+        if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+            clientIp = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+            clientIp = request.getRemoteAddr();
+        }
+        return clientIp;
+    }
+
     // 댓글 생성
     @Transactional
-    public void createComment(CommentCreateDTO commentCreateDTO, Long userId) {
+    public void createComment(CommentCreateDTO commentCreateDTO, Long userId, HttpServletRequest request) {
         // 해당 유저를 찾을 수 없을 경우 예외처리
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
         // 해당 매모을 찾을 수 없을 경우 예외처리
         Memo memo = memoRepository.findById(commentCreateDTO.getMemoId())
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
 
         Comment comment = Comment.builder()
                 .comment(commentCreateDTO.getComment())
@@ -51,6 +71,7 @@ public class CommentService {
                 .member(member)
                 .rating(commentCreateDTO.getRating())
                 .likeCnt(0)
+                .createIp(clientIp)
                 .modify(false)
                 .isDeleted(false)
                 .isHidden(false)
@@ -94,7 +115,7 @@ public class CommentService {
 
     // 댓글 수정
     @Transactional
-    public void updateComment(Long commentId, CommentUpdateDTO commentUpdateDTO, Long userId) {
+    public void updateComment(Long commentId, CommentUpdateDTO commentUpdateDTO, Long userId, HttpServletRequest request) {
         // 댓글이 존재하지 않으면 예외 처리
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
@@ -104,10 +125,14 @@ public class CommentService {
             throw new UnauthorizedException(ErrorStatus.INVALID_MODIFY_AUTH.getMessage());
         }
 
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
+
         comment = comment.toBuilder()
                 .comment(commentUpdateDTO.getComment())
                 .rating(commentUpdateDTO.getRating())
                 .modify(true)
+                .lastModifyIp(clientIp)
                 .build();
 
         commentRepository.save(comment);
@@ -133,7 +158,7 @@ public class CommentService {
 
     // 댓글 삭제(소프트삭제)
     @Transactional
-    public void deleteComment(Long commentId, Long userId) {
+    public void deleteComment(Long commentId, Long userId, HttpServletRequest request) {
         // 댓글을 ID로 찾고, 존재하지 않으면 예외 처리
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
@@ -143,8 +168,14 @@ public class CommentService {
             throw new UnauthorizedException(ErrorStatus.INVALID_DELETE_AUTH.getMessage());
         }
 
-        // 소프트딜리트 처리
-        comment.softDelete();
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
+
+        comment = comment.toBuilder()
+                .isDeleted(true)
+                .lastModifyIp(clientIp)
+                .build();
+
         commentRepository.save(comment);
     }
 
