@@ -1,6 +1,7 @@
 package com.rhkr8521.mapping.api.member.controller;
 
 import com.rhkr8521.mapping.api.member.dto.*;
+import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.member.service.OAuthService;
@@ -22,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag(name = "Member", description = "Member 관련 API 입니다.")
 @RestController
@@ -172,6 +175,53 @@ public class MemberController {
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
         memberService.withdrawMember(userId);
         return ApiResponse.success_only(SuccessStatus.DELETE_MEMBER_SUCCESS);
+    }
+
+    @Operation(
+            summary = "유저 차단 API",
+            description = "특정 사용자를 차단합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 차단 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없습니다."),
+    })
+    @PostMapping("/block")
+    public ResponseEntity<ApiResponse<Void>> blockUser(@AuthenticationPrincipal UserDetails userDetails,
+                                                       @RequestParam("userId") Long userId) {
+        Long blockerId = memberService.getUserIdByEmail(userDetails.getUsername());
+        memberService.blockUser(blockerId, userId);
+        return ApiResponse.success_only(SuccessStatus.BLOCK_USER_SUCCESS);
+    }
+
+    @Operation(
+            summary = "차단한 유저 목록 조회 API",
+            description = "내가 차단한 사용자 목록을 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 차단 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없습니다."),
+    })
+    @GetMapping("/block/list")
+    public ResponseEntity<ApiResponse<List<BlockedUserResponseDTO>>> getBlockedUsers(@AuthenticationPrincipal UserDetails userDetails) {
+        Long blockerId = memberService.getUserIdByEmail(userDetails.getUsername());
+        List<BlockedUserResponseDTO> response = memberService.getBlockedUserResponseList(blockerId);
+        return ApiResponse.success(SuccessStatus.SEND_BLOCK_LIST_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "유저 차단 해제 API",
+            description = "차단한 사용자 중 특정 사용자의 차단을 해제합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 차단 해제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 유저를 찾을 수 없습니다."),
+    })
+    @DeleteMapping("/block/{userId}")
+    public ResponseEntity<ApiResponse<Void>> unblockUser(@AuthenticationPrincipal UserDetails userDetails,
+                                                         @PathVariable Long userId) {
+        Long blockerId = memberService.getUserIdByEmail(userDetails.getUsername());
+        memberService.unblockUser(blockerId, userId);
+        return ApiResponse.success_only(SuccessStatus.UNBLOCK_USER_SUCCESS);
     }
 
     private boolean isImageFile(MultipartFile file) {
