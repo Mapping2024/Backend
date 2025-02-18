@@ -117,6 +117,7 @@ public class MemberService {
                 .role(Role.USER)
                 .deleted(false)
                 .deletedAt(null)
+                .socialType("KAKAO")
                 .build();
 
         memberRepository.save(member);
@@ -171,6 +172,7 @@ public class MemberService {
                     .role(Role.USER)
                     .deleted(false)
                     .deletedAt(null)
+                    .socialType("APPLE")
                     .build();
             memberRepository.save(member);
             return member;

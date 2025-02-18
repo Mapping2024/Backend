@@ -32,6 +32,7 @@ public class Member extends BaseTimeEntity implements UserDetails{
     private Role role; // 권한
 
     private String socialId; // 로그인한 소셜 타입의 식별자 값
+    private String socialType; // 소셜 로그인 타입
 
     private String refreshToken; // 리프레시 토큰
 
