@@ -254,6 +254,13 @@ public class MemoService {
             throw new NotFoundException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
         }
 
+        // 메모에 이미지가 존재한다면 S3 버킷에서 이미지 삭제
+        if (memo.getImages() != null && !memo.getImages().isEmpty()) {
+            for (MemoImage image : memo.getImages()) {
+                s3Service.deleteFile(image.getImageUrl());
+            }
+        }
+
         // 해당 Memo의 모든 댓글 조회
         List<Comment> comments = commentRepository.findByMemoId(memoId);
 
