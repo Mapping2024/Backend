@@ -1,11 +1,14 @@
 package com.rhkr8521.mapping.api.member.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
+import com.rhkr8521.mapping.api.member.dto.BlockedUserResponseDTO;
 import com.rhkr8521.mapping.api.member.dto.KakaoUserInfoDTO;
 import com.rhkr8521.mapping.api.member.dto.UserInfoResponseDTO;
 import com.rhkr8521.mapping.api.member.entity.Member;
+import com.rhkr8521.mapping.api.member.entity.MemberBlock;
 import com.rhkr8521.mapping.api.member.entity.Role;
 import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
+import com.rhkr8521.mapping.api.member.repository.MemberBlockRepository;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
@@ -18,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,6 +32,7 @@ public class MemberService {
     private final JwtService jwtService;
     private final OAuthService oAuthService;
     private final S3Service s3Service;
+    private final MemberBlockRepository memberBlockRepository;
 
     private static final List<String> FIRST_WORDS = Arrays.asList(
             "멍청한", "빠른", "귀여운", "화난", "배고픈", "행복한", "똑똑한", "졸린", "심술궂은", "시끄러운",
@@ -150,6 +155,7 @@ public class MemberService {
         memberRepository.save(updatedMember);
     }
 
+    // 사용자 정보 조회
     @Transactional(readOnly = true)
     public UserInfoResponseDTO getUserInfo(Long userId) {
         // 해당 유저를 찾을 수 없을 경우 예외처리
@@ -159,6 +165,7 @@ public class MemberService {
         return new UserInfoResponseDTO(member);
     }
 
+    // 사용자 탈퇴
     @Transactional
     public void withdrawMember(Long userId) {
         Member member = memberRepository.findById(userId)
@@ -172,5 +179,82 @@ public class MemberService {
         Member updatedMember = member.markAsDeleted();
         memberRepository.save(updatedMember);
     }
+
+    // 사용자 차단
+    @Transactional
+    public void blockUser(Long blockerId, Long blockedId) {
+        // 차단하는 사용자(Blocker) 조회
+        Member blocker = memberRepository.findById(blockerId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 차단 당하는 사용자(Blocked) 조회
+        Member blocked = memberRepository.findById(blockedId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        if (memberBlockRepository.existsByBlockerAndBlocked(blocker, blocked)) {
+            throw new BadRequestException(ErrorStatus.ALREADY_BLOCK_USER_EXCEPTION.getMessage());
+        }
+
+        MemberBlock memberBlock = MemberBlock.builder()
+                .blocker(blocker)
+                .blocked(blocked)
+                .build();
+
+        memberBlockRepository.save(memberBlock);
+    }
+
+    // 차단 사용자 목록 조회
+    @Transactional(readOnly = true)
+    public List<BlockedUserResponseDTO> getBlockedUserResponseList(Long blockerId) {
+        Member blocker = memberRepository.findById(blockerId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        return memberBlockRepository.findByBlocker(blocker)
+                .stream()
+                .map(MemberBlock::getBlocked)
+                .map(member -> BlockedUserResponseDTO.builder()
+                        .userId(member.getId())
+                        .profileImage(member.getImageUrl())
+                        .nickname(member.getNickname())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // 사용자 차단 해제
+    @Transactional
+    public void unblockUser(Long blockerId, Long blockedId) {
+        // 차단하는 사용자(Blocker) 조회
+        Member blocker = memberRepository.findById(blockerId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 차단 당하는 사용자(Blocked) 조회
+        Member blocked = memberRepository.findById(blockedId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 차단한 유저가 아니라면 예외처리
+        MemberBlock memberBlock = memberBlockRepository.findByBlockerAndBlocked(blocker, blocked)
+                .orElseThrow(() -> new BadRequestException(ErrorStatus.NOT_BLOCK_USER_EXCEPTION.getMessage()));
+
+        memberBlockRepository.delete(memberBlock);
+    }
+
+    // 내부에서 사용하기 위한 차단 사용자 목록 조회 메서드
+    private List<Member> getBlockedUsersInternal(Long blockerId) {
+        Member blocker = memberRepository.findById(blockerId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+        return memberBlockRepository.findByBlocker(blocker)
+                .stream()
+                .map(MemberBlock::getBlocked)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> getBlockedUserIds(Long blockerId) {
+        return getBlockedUsersInternal(blockerId)
+                .stream()
+                .map(Member::getId)
+                .collect(Collectors.toList());
+    }
+
 
 }

@@ -37,6 +37,10 @@ public enum SuccessStatus {
     DELETE_COMMENT_SUCCESS(HttpStatus.OK,"댓글 삭제 상공"),
 
     REPORT_MEMO_SUCCESS(HttpStatus.OK,"메모 신고 성공"),
+    BLOCK_USER_SUCCESS(HttpStatus.OK,"회원 차단 성공"),
+    SEND_BLOCK_LIST_SUCCESS(HttpStatus.OK,"회원 차단 목록 조회 성공"),
+    UNBLOCK_USER_SUCCESS(HttpStatus.OK,"회원 차단 해제 성공"),
+
     /**
      * 201
      */

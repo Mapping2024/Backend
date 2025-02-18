@@ -29,6 +29,9 @@ public enum ErrorStatus {
     MISSING_COMMENT_MEMOID(HttpStatus.BAD_REQUEST,"메모 ID가 입력되지 않았습니다."),
     ALREADY_DELETE_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"이미 탈퇴한 회원입니다."),
     ALREADY_REPORT_MEMO_EXCEPTION(HttpStatus.BAD_REQUEST,"해당 메모는 이미 신고처리 되었습니다."),
+    CANT_ACCESS_BLOCK_USER_MEMO_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자의 메모는 조회할 수 없습니다."),
+    ALREADY_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"이미 차단한 사용자입니다."),
+    NOT_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자가 아닙니다."),
 
     /**
      * 401 UNAUTHORIZED

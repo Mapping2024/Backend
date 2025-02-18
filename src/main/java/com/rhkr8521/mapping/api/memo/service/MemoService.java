@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -119,23 +120,30 @@ public class MemoService {
     // 전체 메모 조회(공개 + 비공개)
     public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km, UserDetails userDetails) {
         List<Memo> allMemos = memoRepository.findMemosWithinRadius(lat, lng, km);
+        final List<Long> blockedIds;
 
-        // 공개 메모 필터
+        if (userDetails != null) {
+            Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+            blockedIds = memberService.getBlockedUserIds(userId);
+        } else {
+            blockedIds = Collections.emptyList();
+        }
+
+        // 공개 메모 필터: 차단된 사용자의 메모는 제외
         List<Memo> publicMemos = allMemos.stream()
-                //.filter(Memo::isPrivate)
                 .filter(m -> !m.isSecret())
+                .filter(m -> blockedIds.isEmpty() || !blockedIds.contains(m.getMember().getId()))
                 .toList();
 
         List<Memo> privateMemos = new ArrayList<>();
         if (userDetails != null) {
             Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
-            // 내 프라이빗 메모 필터
             privateMemos = allMemos.stream()
                     .filter(m -> m.isSecret() && m.getMember().getId().equals(userId))
                     .toList();
         }
 
-        // 공개 메모 + 내 프라이빗 메모 합치기
+        // 공개 메모와 내 프라이빗 메모 합치기
         List<Memo> combinedMemos = new ArrayList<>(publicMemos);
         combinedMemos.addAll(privateMemos);
 
@@ -155,6 +163,15 @@ public class MemoService {
     public MemoDetailResponseDTO getMemoDetail(Long memoId, UserDetails userDetails) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 유저가 로그인한 경우 차단한 사용자의 메모라면 조회 못하도록 처리
+        if (userDetails != null) {
+            Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+            final List<Long> blockedIds = memberService.getBlockedUserIds(userId);
+            if (!blockedIds.isEmpty() && blockedIds.contains(memo.getMember().getId())) {
+                throw new BadRequestException(ErrorStatus.CANT_ACCESS_BLOCK_USER_MEMO_EXCEPTION.getMessage());
+            }
+        }
 
         // 프라이빗 메모인 경우 접근 권한 체크
         if (memo.isSecret()) {
