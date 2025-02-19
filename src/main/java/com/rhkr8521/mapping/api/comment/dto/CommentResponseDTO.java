@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 public class CommentResponseDTO {
 
     private Long id;
+    private Long writerId;
     private String comment;
     private int rating;
     private int likeCnt;
@@ -27,6 +28,7 @@ public class CommentResponseDTO {
         if(comment.isDeleted()) {
             return CommentResponseDTO.builder()
                     .id(comment.getId())
+                    .writerId(comment.getMember().getId())
                     .comment("삭제된 댓글입니다.")
                     .rating(comment.getRating())
                     .likeCnt(comment.getLikeCnt())
@@ -42,6 +44,7 @@ public class CommentResponseDTO {
         String nickname = comment.getMember().isDeleted() ? "(알수없음)" : comment.getMember().getNickname();
         return CommentResponseDTO.builder()
                 .id(comment.getId())
+                .writerId(comment.getMember().getId())
                 .comment(comment.getComment())
                 .rating(comment.getRating())
                 .likeCnt(comment.getLikeCnt())
