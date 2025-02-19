@@ -58,7 +58,10 @@ public class S3Service {
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-            imageUrls.add(domain + "/" + fileKey);
+            // AWS S3
+            //imageUrls.add(domain + "/" + fileKey);
+            // rhkr8521-Bucket
+            imageUrls.add(domain + "/" + bucketName + "/" + fileKey);
         }
 
         return imageUrls;
@@ -87,12 +90,19 @@ public class S3Service {
                 .acl("public-read")
                 .build();
         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-        return domain + "/" + fileKey;
+        // AWS S3
+        //return domain + "/" + fileKey;
+        // rhkr8521-Bucket
+        return domain + "/" + bucketName + "/" + fileKey;
+
     }
 
     public void deleteFile(String imageUrl) {
         if (imageUrl != null && imageUrl.startsWith(domain)) {
-            String fileKey = imageUrl.replace(domain + "/", "");
+            // AWS S3
+            //String fileKey = imageUrl.replace(domain + "/", "");
+            // rhkr8521-Bucket
+            String fileKey = imageUrl.replace(domain + "/" + bucketName + "/", "");
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
                     .key(fileKey)
