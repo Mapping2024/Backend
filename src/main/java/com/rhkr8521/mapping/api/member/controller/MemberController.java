@@ -69,7 +69,6 @@ public class MemberController {
         return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
     }
 
-    @Hidden
     @Operation(
             summary = "Apple 로그인 API",
             description = "Apple Authorization Code를 통해 사용자의 정보를 등록 및 토큰을 발급합니다."
