@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     boolean existsByMemoAndMember(Memo memo, Member member);
+
+    void deleteAllByMemoId(Long memoId);
 }

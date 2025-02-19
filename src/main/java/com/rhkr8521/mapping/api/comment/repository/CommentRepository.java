@@ -29,4 +29,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Modifying
     @Query("update Comment c set c.likeCnt = case when c.likeCnt > 0 then c.likeCnt - 1 else 0 end where c.id = :commentId")
     int decrementLikeCount(@Param("commentId") Long commentId);
+
+    List<Comment> findByMemberId(Long memberId);
+
 }
