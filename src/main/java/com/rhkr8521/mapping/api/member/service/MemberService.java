@@ -154,6 +154,7 @@ public class MemberService {
         response.put("role", member.getRole());
         response.put("nickname", member.getNickname());
         response.put("profileImage", member.getImageUrl());
+        response.put("socialId", member.getSocialId());
         return response;
     }
 
