@@ -15,6 +15,7 @@ import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
+import com.rhkr8521.mapping.slack.SlackNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class MemoService {
+
     private final MemoRepository memoRepository;
     private final MemoLikeRepository memoLikeRepository;
     private final MemoHateRepository memoHateRepository;
@@ -41,6 +43,7 @@ public class MemoService {
     private final MemoReportRepository memoReportRepository;
     private final MemberService memberService;
     private final S3Service s3Service;
+    private final SlackNotificationService slackNotificationService;
 
     // 메모 생성
     public void createMemo(Long userId, MemoCreateRequestDTO memoRequest, List<MultipartFile> images, HttpServletRequest request) throws IOException {
@@ -490,6 +493,7 @@ public class MemoService {
                 .build();
 
         memoReportRepository.save(memoReport);
+        slackNotificationService.sendMemoReportMessage(memo.getId(), String.valueOf(reportRequest.getReportReason().getDescription()));
     }
 
 }
