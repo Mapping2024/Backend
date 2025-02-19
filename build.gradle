@@ -53,7 +53,10 @@ dependencies {
 	//runtimeOnly 'com.h2database:h2'
 
 	// MYSQL
-	implementation 'mysql:mysql-connector-java:8.0.33'
+	//implementation 'mysql:mysql-connector-java:8.0.33'
+
+	// MYRIADB
+	implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.2'
 
 	implementation 'com.nimbusds:nimbus-jose-jwt:9.31'
 	implementation 'org.bouncycastle:bcprov-jdk18on:1.80'
