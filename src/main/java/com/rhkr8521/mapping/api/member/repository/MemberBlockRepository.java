@@ -14,4 +14,6 @@ public interface MemberBlockRepository extends JpaRepository<MemberBlock, Long> 
     boolean existsByBlockerAndBlocked(Member blocker, Member blocked);
     Optional<MemberBlock> findByBlockerAndBlocked(Member blocker, Member blocked);
     List<MemberBlock> findByBlocker(Member blocker);
+
+    void deleteAllByBlockerIdOrBlockedId(Long memberId, Long memberId1);
 }

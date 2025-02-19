@@ -43,4 +43,5 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
     @Query("update Memo m set m.hateCnt = case when m.hateCnt > 0 then m.hateCnt - 1 else 0 end where m.id = :memoId")
     void decrementHateCount(@Param("memoId") Long memoId);
 
+    List<Memo> findByMemberId(Long memberId);
 }
