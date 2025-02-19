@@ -64,6 +64,15 @@ public class MemberService {
         return firstWord + secondWord + "#" + formattedNumber;
     }
 
+    private String generateUniqueRandomNickname() {
+        String nickname;
+        // 중복되지 않는 닉네임이 생성될 때까지 반복
+        do {
+            nickname = generateRandomNickname();
+        } while (memberRepository.existsByNickname(nickname));
+        return nickname;
+    }
+
     @Transactional
     public Map<String, Object> loginWithKakao(String kakaoAccessToken) {
         // 카카오 Access Token을 이용해 사용자 정보 가져오기
@@ -112,7 +121,7 @@ public class MemberService {
         Member member = Member.builder()
                 .socialId(kakaoUserInfo.getId())
                 .email(UUID.randomUUID() + "@socialUser.com")
-                .nickname(generateRandomNickname())
+                .nickname(generateUniqueRandomNickname())
                 .imageUrl(kakaoUserInfo.getProfileImage())
                 .role(Role.USER)
                 .deleted(false)
@@ -167,7 +176,7 @@ public class MemberService {
             Member member = Member.builder()
                     .socialId(appleUserInfo.getId())
                     .email(appleUserInfo.getEmail() != null ? appleUserInfo.getEmail() : UUID.randomUUID() + "@socialUser.com")
-                    .nickname(generateRandomNickname())
+                    .nickname(generateUniqueRandomNickname())
                     .imageUrl(null)
                     .role(Role.USER)
                     .deleted(false)
