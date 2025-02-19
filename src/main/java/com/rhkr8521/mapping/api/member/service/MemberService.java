@@ -14,6 +14,7 @@ import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
+import com.rhkr8521.mapping.slack.SlackNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class MemberService {
     private final S3Service s3Service;
     private final AppleService appleService;
     private final MemberBlockRepository memberBlockRepository;
+    private final SlackNotificationService slackNotificationService;
 
     private static final List<String> FIRST_WORDS = Arrays.asList(
             "멍청한", "빠른", "귀여운", "화난", "배고픈", "행복한", "똑똑한", "졸린", "심술궂은", "시끄러운",
@@ -131,6 +133,7 @@ public class MemberService {
 
         memberRepository.save(member);
 
+        slackNotificationService.sendMemberRegistrationMessage(member.getId());
         return member;
     }
 
@@ -185,6 +188,7 @@ public class MemberService {
                     .socialType("APPLE")
                     .build();
             memberRepository.save(member);
+            slackNotificationService.sendMemberRegistrationMessage(member.getId());
             return member;
         }
     }
