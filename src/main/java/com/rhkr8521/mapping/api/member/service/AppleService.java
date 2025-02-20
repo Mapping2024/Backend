@@ -64,6 +64,7 @@ public class AppleService {
         String userId = "";
         String email = "";
         String accessToken = "";
+        String refreshToken = "";
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -89,6 +90,7 @@ public class AppleService {
             JSONParser jsonParser = new JSONParser();
             JSONObject jsonObj = (JSONObject) jsonParser.parse(response.getBody());
             accessToken = String.valueOf(jsonObj.get("access_token"));
+            refreshToken = String.valueOf(jsonObj.get("refresh_token"));
 
             // ID 토큰 파싱하여 사용자 정보 추출
             SignedJWT signedJWT = SignedJWT.parse(String.valueOf(jsonObj.get("id_token")));
@@ -108,6 +110,7 @@ public class AppleService {
                 .id(userId)
                 .token(accessToken)
                 .email(email)
+                .refreshToken(refreshToken)
                 .build();
     }
 
