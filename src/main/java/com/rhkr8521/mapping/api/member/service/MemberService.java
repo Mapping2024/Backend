@@ -174,6 +174,7 @@ public class MemberService {
                 member = member.toBuilder()
                         .deleted(false)
                         .deletedAt(null)
+                        .oauthRefreshToken(appleUserInfo.getRefreshToken())
                         .build();
                 memberRepository.save(member);
             }
