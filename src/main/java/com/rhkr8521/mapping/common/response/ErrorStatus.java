@@ -60,6 +60,11 @@ public enum ErrorStatus {
     FAIL_PARSE_KAKAO_USER_INFO(HttpStatus.INTERNAL_SERVER_ERROR, "카카오 사용자 정보를 가져오지 못했습니다."),
     FAIL_ACCESS_APPLE_OAUTH_SERVICE(HttpStatus.INTERNAL_SERVER_ERROR,"Apple 소셜 로그인 중 오류 발생:"),
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류"),
+    FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR,"카카오 OAuth 연결 해제 실패: "),
+    FAIL_UNLINK_APPLE_OAUTH_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR,"Apple OAuth 연결 해제 실패: "),
+    MISSING_APPLE_OAUTH_REFRESH_TOKEN(HttpStatus.INTERNAL_SERVER_ERROR,"애플 리프레시 토큰이 존재하지 않습니다."),
+    MISSING_APPLE_OAUTH_ACCESS_TOKEN(HttpStatus.INTERNAL_SERVER_ERROR,"애플 엑세스 토큰이 존재하지 않습니다."),
+    FAIL_REISSUE_APPLE_OAUTH_ACCESS_TOKEN(HttpStatus.INTERNAL_SERVER_ERROR,"애플 엑세스 토큰 재발급 실패: "),
 
     ;
 

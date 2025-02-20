@@ -35,6 +35,7 @@ public class Member extends BaseTimeEntity implements UserDetails{
     private String socialType; // 소셜 로그인 타입
 
     private String refreshToken; // 리프레시 토큰
+    private String oauthRefreshToken; // OAuth 리프레시 토큰
 
     private boolean deleted; // 회원 탈퇴
     private LocalDateTime deletedAt; // 탈퇴 날짜

@@ -9,6 +9,8 @@ import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.rhkr8521.mapping.api.member.dto.AppleLoginDTO;
+import com.rhkr8521.mapping.common.exception.InternalServerException;
+import com.rhkr8521.mapping.common.response.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
@@ -28,6 +30,7 @@ import java.security.KeyFactory;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -175,5 +178,69 @@ public class AppleService {
             throw new Exception("키 파일을 찾을 수 없습니다: " + file);
         }
         return content;
+    }
+
+    /**
+     * 애플 리프레시 토큰을 이용해 엑세스 토큰 재발급
+     */
+    public String refreshAppleAccessToken(String refreshToken) throws Exception {
+        String url = APPLE_AUTH_URL + "/auth/token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        String clientSecret = createClientSecret();
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("client_id", APPLE_CLIENT_ID);
+        params.add("client_secret", clientSecret);
+        params.add("grant_type", "refresh_token");
+        params.add("refresh_token", refreshToken);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> result = objectMapper.readValue(response.getBody(), Map.class);
+            String accessToken = result.get("access_token").toString();
+            return accessToken;
+        } else {
+            throw new InternalServerException(ErrorStatus.FAIL_REISSUE_APPLE_OAUTH_ACCESS_TOKEN.getMessage() + response.getBody());
+        }
+    }
+
+    /**
+     * 애플 앱 연결 해제(토큰 리보크)
+     */
+    public void unlinkAppleUser(String appleAccessToken) throws Exception {
+        if (appleAccessToken == null || appleAccessToken.isEmpty()) {
+            throw new InternalServerException(ErrorStatus.MISSING_APPLE_OAUTH_ACCESS_TOKEN.getMessage());
+        }
+
+        String url = APPLE_AUTH_URL + "/auth/revoke";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        // client secret 생성 (내부 메서드 createClientSecret() 재사용)
+        String clientSecret = createClientSecret();
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("client_id", APPLE_CLIENT_ID);
+        params.add("client_secret", clientSecret);
+        params.add("token", appleAccessToken);
+        params.add("token_type_hint", "access_token");
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new InternalServerException(ErrorStatus.FAIL_UNLINK_APPLE_OAUTH_EXCEPTION.getMessage() + response.getBody());
+        }
     }
 }

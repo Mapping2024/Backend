@@ -34,6 +34,9 @@ public class OAuthService {
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
     private String kakaoRedirectUri;
 
+    @Value("${kakao.admin-key}")
+    private String kakaoAdminKey;
+
     // 카카오에서 인가 코드를 이용해 액세스 토큰을 받아오는 메서드
     public String getKakaoAccessToken(String code) {
         String url = "https://kauth.kakao.com/oauth/token";
@@ -122,6 +125,27 @@ public class OAuthService {
             return userInfo;
         } catch (Exception e) {
             throw new InternalServerException(ErrorStatus.FAIL_PARSE_KAKAO_USER_INFO.getMessage());
+        }
+    }
+
+    // 카카오 앱 연결 해제
+    public void unlinkKakaoUser(String kakaoUserId) {
+        String url = "https://kapi.kakao.com/v1/user/unlink";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.set("Authorization", "KakaoAK " + kakaoAdminKey);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("target_id_type", "user_id");
+        params.add("target_id", kakaoUserId);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException(ErrorStatus.FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION.getMessage() + response.getBody());
         }
     }
 }

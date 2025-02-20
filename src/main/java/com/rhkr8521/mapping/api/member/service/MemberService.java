@@ -12,6 +12,7 @@ import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
 import com.rhkr8521.mapping.api.member.repository.MemberBlockRepository;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
+import com.rhkr8521.mapping.common.exception.InternalServerException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
 import com.rhkr8521.mapping.slack.SlackNotificationService;
@@ -129,6 +130,7 @@ public class MemberService {
                 .deleted(false)
                 .deletedAt(null)
                 .socialType("KAKAO")
+                .oauthRefreshToken(null)
                 .build();
 
         memberRepository.save(member);
@@ -186,6 +188,7 @@ public class MemberService {
                     .deleted(false)
                     .deletedAt(null)
                     .socialType("APPLE")
+                    .oauthRefreshToken(appleUserInfo.getRefreshToken())
                     .build();
             memberRepository.save(member);
             slackNotificationService.sendMemberRegistrationMessage(member.getId());
@@ -244,6 +247,28 @@ public class MemberService {
 
         if (member.isDeleted()) {
             throw new BadRequestException(ErrorStatus.ALREADY_DELETE_USER_EXCEPTION.getMessage());
+        }
+
+        // 카카오 소셜 계정의 경우 앱 연결 해제 진행
+        if ("KAKAO".equalsIgnoreCase(member.getSocialType())) {
+            try {
+                oAuthService.unlinkKakaoUser(member.getSocialId());
+            } catch (Exception e) {
+                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION.getMessage() + e.getMessage());
+            }
+        }
+        // 애플 소셜 계정의 경우 앱 연결 해제 진행 (리프레시 토큰을 통해 엑세스 토큰 재발급)
+        else if ("APPLE".equalsIgnoreCase(member.getSocialType())) {
+            String appleRefreshToken = member.getOauthRefreshToken();
+            if (appleRefreshToken == null || appleRefreshToken.isEmpty()) {
+                throw new InternalServerException(ErrorStatus.MISSING_APPLE_OAUTH_REFRESH_TOKEN.getMessage());
+            }
+            try {
+                String appleAccessToken = appleService.refreshAppleAccessToken(appleRefreshToken);
+                appleService.unlinkAppleUser(appleAccessToken);
+            } catch (Exception e) {
+                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_APPLE_OAUTH_EXCEPTION.getMessage() + e.getMessage());
+            }
         }
 
         // 논리적 삭제 처리 및 개인정보 익명화
