@@ -1,7 +1,6 @@
 package com.rhkr8521.mapping.api.memo.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
-import com.rhkr8521.mapping.api.comment.repository.CommentLikeRepository;
 import com.rhkr8521.mapping.api.comment.repository.CommentRepository;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
@@ -12,6 +11,8 @@ import com.rhkr8521.mapping.api.memo.repository.MemoHateRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoLikeRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoReportRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
+import com.rhkr8521.mapping.api.watchdog.dto.ProfanityResponseDTO;
+import com.rhkr8521.mapping.api.watchdog.service.ProfanityDetectionService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
@@ -44,6 +45,7 @@ public class MemoService {
     private final MemberService memberService;
     private final S3Service s3Service;
     private final SlackNotificationService slackNotificationService;
+    private final ProfanityDetectionService profanityDetectionService;
 
     // 메모 생성
     public void createMemo(Long userId, MemoCreateRequestDTO memoRequest, List<MultipartFile> images, HttpServletRequest request) throws IOException {
@@ -65,10 +67,14 @@ public class MemoService {
             }
         }
 
+        // 제목과 내용에 대해 비속어 검증
+        ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
+        ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+
         Memo memo = Memo.builder()
                 .member(member)
-                .title(memoRequest.getTitle())
-                .content(memoRequest.getContent())
+                .title(titleResponse.getCensoredText())
+                .content(contentResponse.getCensoredText())
                 .lat(memoRequest.getLat())
                 .lng(memoRequest.getLng())
                 .category(memoRequest.getCategory())
@@ -297,6 +303,11 @@ public class MemoService {
                            List<MultipartFile> newImages, List<String> deleteImageUrls,
                            HttpServletRequest request) throws IOException {
 
+        // 해당 유저를 찾을 수 없을 경우 예외처리
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 해당 메모를 찾을 수 없을 경우 예외처리
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
 
@@ -308,12 +319,16 @@ public class MemoService {
         // 접속 IP 추출
         String clientIp = extractClientIp(request);
 
+        // 제목과 내용에 대해 비속어 검증
+        ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
+        ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+
         // 메모 정보 업데이트 (Builder 패턴 사용)
         Memo updatedMemo = Memo.builder()
                 .id(memo.getId())
                 .member(memo.getMember())
-                .title(memoRequest.getTitle())
-                .content(memoRequest.getContent())
+                .title(titleResponse.getCensoredText())
+                .content(contentResponse.getCensoredText())
                 .lat(memo.getLat())
                 .lng(memo.getLng())
                 .category(memoRequest.getCategory())

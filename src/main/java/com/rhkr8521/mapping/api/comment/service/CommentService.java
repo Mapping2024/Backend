@@ -12,6 +12,8 @@ import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
+import com.rhkr8521.mapping.api.watchdog.dto.ProfanityResponseDTO;
+import com.rhkr8521.mapping.api.watchdog.service.ProfanityDetectionService;
 import com.rhkr8521.mapping.common.exception.NotFoundException;
 import com.rhkr8521.mapping.common.exception.UnauthorizedException;
 import com.rhkr8521.mapping.common.response.ErrorStatus;
@@ -35,6 +37,7 @@ public class CommentService {
     private final MemoRepository memoRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
+    private final ProfanityDetectionService profanityDetectionService;
 
     // 클라이언트 IP 추출 메소드
     private String extractClientIp(HttpServletRequest request) {
@@ -65,8 +68,11 @@ public class CommentService {
         // 접속 IP 추출
         String clientIp = extractClientIp(request);
 
+        // 댓글 내용에 대해 비속어 검증
+        ProfanityResponseDTO commentResponse = profanityDetectionService.checkTextAndSave(member, commentCreateDTO.getComment());
+
         Comment comment = Comment.builder()
-                .comment(commentCreateDTO.getComment())
+                .comment(commentResponse.getCensoredText())
                 .memo(memo)
                 .member(member)
                 .rating(commentCreateDTO.getRating())
@@ -116,6 +122,10 @@ public class CommentService {
     // 댓글 수정
     @Transactional
     public void updateComment(Long commentId, CommentUpdateDTO commentUpdateDTO, Long userId, HttpServletRequest request) {
+        // 해당 유저를 찾을 수 없을 경우 예외처리
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
         // 댓글이 존재하지 않으면 예외 처리
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
@@ -128,8 +138,11 @@ public class CommentService {
         // 접속 IP 추출
         String clientIp = extractClientIp(request);
 
+        // 댓글 내용에 대해 비속어 검증
+        ProfanityResponseDTO commentResponse = profanityDetectionService.checkTextAndSave(member, commentUpdateDTO.getComment());
+
         comment = comment.toBuilder()
-                .comment(commentUpdateDTO.getComment())
+                .comment(commentResponse.getCensoredText())
                 .rating(commentUpdateDTO.getRating())
                 .modify(true)
                 .lastModifyIp(clientIp)
