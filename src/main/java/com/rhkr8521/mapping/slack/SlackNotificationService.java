@@ -65,12 +65,12 @@ public class SlackNotificationService {
     }
 
     /**
-     * 메모 신고 알림
+     * 신고 알림
      * 예) "[신고] 메모 신고 (ID: 2) - 음란물입니다."
      */
-    public void sendMemoReportMessage(Long memoId, String reportDescription) {
+    public void sendReportMessage(String reportType, Long memoId, String reportDescription) {
         // enum의 getDescription() 결과를 받아서 사용
-        String message = String.format("[신고] 메모 신고 (ID: %d) - %s", memoId, reportDescription);
+        String message = String.format("[신고] %s 신고 (ID: %d) - %s", reportType, memoId, reportDescription);
         sendSlackMessage(message);
     }
 }

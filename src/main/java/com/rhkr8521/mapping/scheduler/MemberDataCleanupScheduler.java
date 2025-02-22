@@ -10,7 +10,8 @@ import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
 import com.rhkr8521.mapping.api.memo.repository.MemoHateRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoLikeRepository;
-import com.rhkr8521.mapping.api.memo.repository.MemoReportRepository;
+import com.rhkr8521.mapping.api.report.repository.CommentReportRepository;
+import com.rhkr8521.mapping.api.report.repository.MemoReportRepository;
 import com.rhkr8521.mapping.api.memo.repository.MemoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -33,6 +34,7 @@ public class MemberDataCleanupScheduler {
     private final MemoReportRepository memoReportRepository;
     private final S3Service s3Service;
     private final MemberBlockRepository memberBlockRepository;
+    private final CommentReportRepository commentReportRepository;
 
     // 매일 자정에 실행 (cron 표현식: "0 0 0 * * *")
     @Scheduled(cron = "0 0 0 * * *")
@@ -66,6 +68,8 @@ public class MemberDataCleanupScheduler {
                 for (Comment comment : commentsForMemo) {
                     // 댓글 좋아요 삭제
                     commentLikeRepository.deleteAllByCommentId(comment.getId());
+                    // 댓글 신고 삭제
+                    commentReportRepository.deleteAllByCommentId(comment.getId());
                     // 댓글 삭제
                     commentRepository.delete(comment);
                 }
@@ -79,6 +83,8 @@ public class MemberDataCleanupScheduler {
             for (Comment comment : comments) {
                 // 댓글 좋아요 삭제
                 commentLikeRepository.deleteAllByCommentId(comment.getId());
+                // 댓글 신고 삭제
+                commentReportRepository.deleteAllByCommentId(comment.getId());
                 // 댓글 삭제
                 commentRepository.delete(comment);
             }

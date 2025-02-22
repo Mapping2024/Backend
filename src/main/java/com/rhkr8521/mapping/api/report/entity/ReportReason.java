@@ -1,4 +1,4 @@
-package com.rhkr8521.mapping.api.memo.entity;
+package com.rhkr8521.mapping.api.report.entity;
 
 import lombok.Getter;
 
