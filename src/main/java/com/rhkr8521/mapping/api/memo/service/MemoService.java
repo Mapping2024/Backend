@@ -63,36 +63,68 @@ public class MemoService {
             }
         }
 
-        // 제목과 내용에 대해 비속어 검증
-        ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
-        ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+        // 개인 메모일 경우 필터링 해제
+        if(memoRequest.isSecret()){
+            Memo memo = Memo.builder()
+                    .member(member)
+                    .title(memoRequest.getTitle())
+                    .content(memoRequest.getContent())
+                    .lat(memoRequest.getLat())
+                    .lng(memoRequest.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(0)
+                    .hateCnt(0)
+                    .createIp(clientIp)
+                    .lastModifyIp(null)
+                    .secret(memoRequest.isSecret())
+                    .certified(certified)
+                    .modify(false)
+                    .isHidden(false)
+                    .isDeleted(false)
+                    .build();
 
-        Memo memo = Memo.builder()
-                .member(member)
-                .title(titleResponse.getCensoredText())
-                .content(contentResponse.getCensoredText())
-                .lat(memoRequest.getLat())
-                .lng(memoRequest.getLng())
-                .category(memoRequest.getCategory())
-                .likeCnt(0)
-                .hateCnt(0)
-                .createIp(clientIp)
-                .lastModifyIp(null)
-                .secret(memoRequest.isSecret())
-                .certified(certified)
-                .modify(false)
-                .isHidden(false)
-                .isDeleted(false)
-                .build();
+            // 이미지 처리
+            if (images != null && !images.isEmpty()) {
 
-        // 이미지 처리
-        if (images != null && !images.isEmpty()) {
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), images);
+                memo.addImages(imageUrls);
+            }
 
-            List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), images);
-            memo.addImages(imageUrls);
+            memoRepository.save(memo);
+
+        } else{
+
+            // 제목과 내용에 대해 비속어 검증
+            ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
+            ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+
+            Memo memo = Memo.builder()
+                    .member(member)
+                    .title(titleResponse.getCensoredText())
+                    .content(contentResponse.getCensoredText())
+                    .lat(memoRequest.getLat())
+                    .lng(memoRequest.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(0)
+                    .hateCnt(0)
+                    .createIp(clientIp)
+                    .lastModifyIp(null)
+                    .secret(memoRequest.isSecret())
+                    .certified(certified)
+                    .modify(false)
+                    .isHidden(false)
+                    .isDeleted(false)
+                    .build();
+
+            // 이미지 처리
+            if (images != null && !images.isEmpty()) {
+
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), images);
+                memo.addImages(imageUrls);
+            }
+
+            memoRepository.save(memo);
         }
-
-        memoRepository.save(memo);
     }
 
     // 거리 계산 메서드(단위: km)
@@ -315,54 +347,102 @@ public class MemoService {
         // 접속 IP 추출
         String clientIp = extractClientIp(request);
 
-        // 제목과 내용에 대해 비속어 검증
-        ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
-        ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+        // 개인 메모일 경우 필터링 해제
+        if(memoRequest.isSecret()){
+            // 메모 정보 업데이트
+            Memo updatedMemo = Memo.builder()
+                    .id(memo.getId())
+                    .member(memo.getMember())
+                    .title(memo.getTitle())
+                    .content(memo.getContent())
+                    .lat(memo.getLat())
+                    .lng(memo.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(memo.getLikeCnt())
+                    .hateCnt(memo.getHateCnt())
+                    .lastModifyIp(clientIp)
+                    .createIp(memo.getCreateIp())
+                    .images(new ArrayList<>(memo.getImages()))
+                    .modify(true)
+                    .build();
 
-        // 메모 정보 업데이트 (Builder 패턴 사용)
-        Memo updatedMemo = Memo.builder()
-                .id(memo.getId())
-                .member(memo.getMember())
-                .title(titleResponse.getCensoredText())
-                .content(contentResponse.getCensoredText())
-                .lat(memo.getLat())
-                .lng(memo.getLng())
-                .category(memoRequest.getCategory())
-                .likeCnt(memo.getLikeCnt())
-                .hateCnt(memo.getHateCnt())
-                .lastModifyIp(clientIp)
-                .createIp(memo.getCreateIp())
-                .images(new ArrayList<>(memo.getImages()))
-                .modify(true)
-                .build();
+            // 삭제할 이미지 처리
+            if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
+                List<MemoImage> imagesToRemove = memo.getImages().stream()
+                        .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
+                        .toList();
 
-        // 삭제할 이미지 처리
-        if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
-            List<MemoImage> imagesToRemove = memo.getImages().stream()
-                    .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
-                    .toList();
-
-            for (MemoImage image : imagesToRemove) {
-                // S3에서 이미지 삭제
-                s3Service.deleteFile(image.getImageUrl());
-                // 메모에서 이미지 제거
-                updatedMemo.getImages().remove(image);
+                for (MemoImage image : imagesToRemove) {
+                    // S3에서 이미지 삭제
+                    s3Service.deleteFile(image.getImageUrl());
+                    // 메모에서 이미지 제거
+                    updatedMemo.getImages().remove(image);
+                }
             }
-        }
 
-        // 새로운 이미지 업로드 및 추가
-        if (newImages != null && !newImages.isEmpty()) {
-            List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
-            for (String url : imageUrls) {
-                MemoImage image = MemoImage.builder()
-                        .imageUrl(url)
-                        .memo(updatedMemo)
-                        .build();
-                updatedMemo.getImages().add(image);
+            // 새로운 이미지 업로드 및 추가
+            if (newImages != null && !newImages.isEmpty()) {
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
+                for (String url : imageUrls) {
+                    MemoImage image = MemoImage.builder()
+                            .imageUrl(url)
+                            .memo(updatedMemo)
+                            .build();
+                    updatedMemo.getImages().add(image);
+                }
             }
-        }
 
-        memoRepository.save(updatedMemo);
+            memoRepository.save(updatedMemo);
+        }else{
+            // 제목과 내용에 대해 비속어 검증
+            ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
+            ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+
+            // 메모 정보 업데이트
+            Memo updatedMemo = Memo.builder()
+                    .id(memo.getId())
+                    .member(memo.getMember())
+                    .title(titleResponse.getCensoredText())
+                    .content(contentResponse.getCensoredText())
+                    .lat(memo.getLat())
+                    .lng(memo.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(memo.getLikeCnt())
+                    .hateCnt(memo.getHateCnt())
+                    .lastModifyIp(clientIp)
+                    .createIp(memo.getCreateIp())
+                    .images(new ArrayList<>(memo.getImages()))
+                    .modify(true)
+                    .build();
+
+            // 삭제할 이미지 처리
+            if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
+                List<MemoImage> imagesToRemove = memo.getImages().stream()
+                        .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
+                        .toList();
+
+                for (MemoImage image : imagesToRemove) {
+                    // S3에서 이미지 삭제
+                    s3Service.deleteFile(image.getImageUrl());
+                    // 메모에서 이미지 제거
+                    updatedMemo.getImages().remove(image);
+                }
+            }
+
+            // 새로운 이미지 업로드 및 추가
+            if (newImages != null && !newImages.isEmpty()) {
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
+                for (String url : imageUrls) {
+                    MemoImage image = MemoImage.builder()
+                            .imageUrl(url)
+                            .memo(updatedMemo)
+                            .build();
+                    updatedMemo.getImages().add(image);
+                }
+            }
+
+            memoRepository.save(updatedMemo);
+        }
     }
 
     // 좋아요 토글
