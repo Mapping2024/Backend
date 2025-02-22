@@ -20,6 +20,7 @@ public class CommentResponseDTO {
     private String profileImageUrl;
     private String updatedAt;
     private boolean myLike;
+    private boolean isBlind;
 
     public static CommentResponseDTO fromEntity(Comment comment, boolean myLike) {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -37,6 +38,7 @@ public class CommentResponseDTO {
                     .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
                     .myLike(false)
                     .modify(comment.isModify())
+                    .isBlind(true)
                     .build();
         }
 
@@ -53,6 +55,7 @@ public class CommentResponseDTO {
                 .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
                 .myLike(myLike)
                 .modify(comment.isModify())
+                .isBlind(false)
                 .build();
     }
 }

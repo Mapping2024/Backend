@@ -132,6 +132,7 @@ public class CommentService {
                         .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
                         .myLike(false)
                         .modify(comment.isModify())
+                        .isBlind(true)
                         .build();
             }
         }
