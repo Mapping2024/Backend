@@ -50,7 +50,7 @@ public enum ErrorStatus {
 
     USER_NOTFOUND_EXCEPTION(HttpStatus.NOT_FOUND, "해당 유저를 찾을 수 없습니다."),
     MEMO_NOTFOUND_EXCEPTION(HttpStatus.NOT_FOUND, "해당 메모를 찾을 수 없습니다."),
-    COMMENT_NOTFOUND_EXCPETION(HttpStatus.NOT_FOUND,"해당 댓글을 찾을 수 없습니다."),
+    COMMENT_NOTFOUND_EXCEPTION(HttpStatus.NOT_FOUND,"해당 댓글을 찾을 수 없습니다."),
     /**
      * 500 SERVER_ERROR
      */

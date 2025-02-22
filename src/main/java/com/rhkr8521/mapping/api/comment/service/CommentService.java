@@ -8,6 +8,7 @@ import com.rhkr8521.mapping.api.comment.entity.CommentLike;
 import com.rhkr8521.mapping.api.comment.repository.CommentLikeRepository;
 import com.rhkr8521.mapping.api.comment.repository.CommentRepository;
 import com.rhkr8521.mapping.api.member.entity.Member;
+import com.rhkr8521.mapping.api.member.repository.MemberBlockRepository;
 import com.rhkr8521.mapping.api.member.repository.MemberRepository;
 import com.rhkr8521.mapping.api.member.service.MemberService;
 import com.rhkr8521.mapping.api.memo.entity.Memo;
@@ -24,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class CommentService {
     private final MemoRepository memoRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
+    private final MemberBlockRepository memberBlockRepository;
     private final ProfanityDetectionService profanityDetectionService;
 
     // 클라이언트 IP 추출 메소드
@@ -104,11 +107,33 @@ public class CommentService {
     @Transactional(readOnly = true)
     public CommentResponseDTO getCommentDetail(Long commentId, UserDetails userDetails) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCEPTION.getMessage()));
 
         Long userId = null;
         if (userDetails != null) {
             userId = memberService.getUserIdByEmail(userDetails.getUsername());
+        }
+
+        // 차단 여부 검사
+        if (userId != null) {
+            Member currentUser = memberRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+            if (memberBlockRepository.existsByBlockerAndBlocked(currentUser, comment.getMember())) {
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                return CommentResponseDTO.builder()
+                        .id(comment.getId())
+                        .writerId(comment.getMember().getId())
+                        .comment("차단된 사용자 입니다.")
+                        .rating(comment.getRating())
+                        .likeCnt(comment.getLikeCnt())
+                        .nickname("(알수없음)")
+                        .profileImageUrl(null)
+                        .updatedAt(comment.getCreatedAt().format(dateTimeFormatter))
+                        .myLike(false)
+                        .modify(comment.isModify())
+                        .build();
+            }
         }
 
         boolean myLike = false;
@@ -128,7 +153,7 @@ public class CommentService {
 
         // 댓글이 존재하지 않으면 예외 처리
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCEPTION.getMessage()));
 
         // 해당 댓글의 작성자가 요청한 사용자와 동일한지 검증
         if (!comment.getMember().getId().equals(userId)) {
@@ -174,7 +199,7 @@ public class CommentService {
     public void deleteComment(Long commentId, Long userId, HttpServletRequest request) {
         // 댓글을 ID로 찾고, 존재하지 않으면 예외 처리
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCEPTION.getMessage()));
 
         // 해당 댓글의 작성자가 요청한 사용자와 동일한지 검증
         if (!comment.getMember().getId().equals(userId)) {
@@ -197,7 +222,7 @@ public class CommentService {
     public void toggleLike(Long commentId, Long userId) {
         // 댓글과 회원 존재 여부 체크
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCPETION.getMessage()));
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.COMMENT_NOTFOUND_EXCEPTION.getMessage()));
 
         Member member = memberRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));

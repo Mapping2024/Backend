@@ -1,6 +1,6 @@
-package com.rhkr8521.mapping.api.memo.dto;
+package com.rhkr8521.mapping.api.report.dto;
 
-import com.rhkr8521.mapping.api.memo.entity.ReportReason;
+import com.rhkr8521.mapping.api.report.entity.ReportReason;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
