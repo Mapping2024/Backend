@@ -2,9 +2,8 @@ package com.rhkr8521.mapping.api.member.controller;
 
 import com.rhkr8521.mapping.api.member.dto.*;
 import com.rhkr8521.mapping.api.member.jwt.service.JwtService;
-import com.rhkr8521.mapping.api.member.service.AppleService;
 import com.rhkr8521.mapping.api.member.service.MemberService;
-import com.rhkr8521.mapping.api.member.service.OAuthService;
+import com.rhkr8521.mapping.api.member.service.KakaoService;
 import com.rhkr8521.mapping.common.exception.BadRequestException;
 import com.rhkr8521.mapping.common.exception.InternalServerException;
 import com.rhkr8521.mapping.common.response.ApiResponse;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +32,7 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberService memberService;
-    private final OAuthService oauthService;
+    private final KakaoService oauthService;
     private final JwtService jwtService;
 
     @Hidden
@@ -46,7 +44,7 @@ public class MemberController {
     public ResponseEntity<ApiResponse<String>> getKakaoAccessToken(@RequestParam("code") String code) {
         // 인가 코드를 통해 액세스 토큰 요청
         String kakaoAccessToken = oauthService.getKakaoAccessToken(code);
-        return ApiResponse.success(SuccessStatus.SEND_KAKAO_ACCESSTOKEN_SUCCESS, kakaoAccessToken);
+        return ApiResponse.success(SuccessStatus.SEND_OAUTH2_ACCESSTOKEN_SUCCESS, kakaoAccessToken);
     }
 
     @Operation(
@@ -81,11 +79,40 @@ public class MemberController {
     @PostMapping("/apple-login")
     public ResponseEntity<ApiResponse<Map<String, Object>>> loginWithApple(@RequestParam("code") String code) {
         if (code == null || code.isEmpty()) {
-            throw new BadRequestException(ErrorStatus.MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION.getMessage());
+            throw new BadRequestException(ErrorStatus.MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION.getMessage());
         }
 
         Map<String, Object> response = memberService.loginWithApple(code);
         return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "Google 로그인 API",
+            description = "Google Authorization Code를 통해 사용자의 정보를 등록 및 토큰을 발급합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Google Authorization Code가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Google 소셜 로그인 중 오류 발생")
+    })
+    @PostMapping("/google-login")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> loginWithGoogle(@RequestParam("code") String code) {
+        if (code == null || code.isEmpty()) {
+            throw new BadRequestException(ErrorStatus.MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION.getMessage());
+        }
+
+        Map<String, Object> response = memberService.loginWithGoogle(code);
+        return ApiResponse.success(SuccessStatus.SEND_LOGIN_SUCCESS, response);
+    }
+
+    // 백엔드용 구글 OAuth 인가코드 발급로직
+    @Hidden
+    @GetMapping("/google-code")
+    public ResponseEntity<ApiResponse<String>> receiveGoogleCode(
+            @RequestParam("code") String code
+    ) {
+        // 단순히 인가코드만 리턴.
+        return ApiResponse.success(SuccessStatus.SEND_OAUTH2_ACCESSTOKEN_SUCCESS, code);
     }
 
     @Operation(

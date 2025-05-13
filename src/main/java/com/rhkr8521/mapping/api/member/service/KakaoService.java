@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OAuthService {
+public class KakaoService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 

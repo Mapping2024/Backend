@@ -1,10 +1,7 @@
 package com.rhkr8521.mapping.api.member.service;
 
 import com.rhkr8521.mapping.api.aws.s3.S3Service;
-import com.rhkr8521.mapping.api.member.dto.AppleLoginDTO;
-import com.rhkr8521.mapping.api.member.dto.BlockedUserResponseDTO;
-import com.rhkr8521.mapping.api.member.dto.KakaoUserInfoDTO;
-import com.rhkr8521.mapping.api.member.dto.UserInfoResponseDTO;
+import com.rhkr8521.mapping.api.member.dto.*;
 import com.rhkr8521.mapping.api.member.entity.Member;
 import com.rhkr8521.mapping.api.member.entity.MemberBlock;
 import com.rhkr8521.mapping.api.member.entity.Role;
@@ -33,11 +30,12 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final JwtService jwtService;
-    private final OAuthService oAuthService;
+    private final KakaoService kakaoService;
     private final S3Service s3Service;
     private final AppleService appleService;
     private final MemberBlockRepository memberBlockRepository;
     private final SlackNotificationService slackNotificationService;
+    private final GoogleService googleService;
 
     private static final List<String> FIRST_WORDS = Arrays.asList(
             "멍청한", "빠른", "귀여운", "화난", "배고픈", "행복한", "똑똑한", "졸린", "심술궂은", "시끄러운",
@@ -79,7 +77,7 @@ public class MemberService {
     @Transactional
     public Map<String, Object> loginWithKakao(String kakaoAccessToken) {
         // 카카오 Access Token을 이용해 사용자 정보 가져오기
-        KakaoUserInfoDTO kakaoUserInfo = oAuthService.getKakaoUserInfo(kakaoAccessToken);
+        KakaoUserInfoDTO kakaoUserInfo = kakaoService.getKakaoUserInfo(kakaoAccessToken);
 
         // 사용자 정보를 저장
         Member member = registerOrLoginKakaoUser(kakaoUserInfo);
@@ -142,7 +140,7 @@ public class MemberService {
     @Transactional
     public Map<String, Object> loginWithApple(String code) {
         if (code == null || code.isEmpty()) {
-            throw new BadRequestException(ErrorStatus.MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION.getMessage());
+            throw new BadRequestException(ErrorStatus.MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION.getMessage());
         }
         AppleLoginDTO appleInfo;
         try {
@@ -191,6 +189,71 @@ public class MemberService {
                     .deletedAt(null)
                     .socialType("APPLE")
                     .oauthRefreshToken(appleUserInfo.getRefreshToken())
+                    .build();
+            memberRepository.save(member);
+            slackNotificationService.sendMemberRegistrationMessage(member.getId());
+            return member;
+        }
+    }
+
+    // 구글 사용자 정보를 사용해 회원가입 또는 로그인 처리
+    @Transactional
+    public Map<String, Object> loginWithGoogle(String code) {
+        if (code == null || code.isEmpty()) {
+            throw new BadRequestException(
+                    ErrorStatus.MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION.getMessage()
+            );
+        }
+
+        GoogleUserInfoDTO googleInfo;
+        try {
+            googleInfo = googleService.getGoogleUserInfo(code);
+        } catch (Exception e) {
+            log.error("Google OAuth 처리 실패", e);
+            throw new BadRequestException(
+                    ErrorStatus.MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION.getMessage() + ": " + e.getMessage()
+            );
+        }
+
+        Member member = registerOrLoginGoogleUser(googleInfo);
+        Map<String, String> tokens = jwtService.createAccessAndRefreshToken(member.getEmail());
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("tokens",       tokens);
+        resp.put("role",         member.getRole());
+        resp.put("nickname",     member.getNickname());
+        resp.put("profileImage", member.getImageUrl());
+        resp.put("socialId",     member.getSocialId());
+        return resp;
+    }
+
+    @Transactional
+    public Member registerOrLoginGoogleUser(GoogleUserInfoDTO info) {
+        Optional<Member> opt = memberRepository.findBySocialId(info.getId());
+        if (opt.isPresent()) {
+            Member exist = opt.get();
+            if (exist.isDeleted()) {
+                Member restored = exist.toBuilder()
+                        .deleted(false)
+                        .deletedAt(null)
+                        .oauthRefreshToken(info.getRefreshToken())
+                        .email(info.getEmail())
+                        .build();
+                return memberRepository.save(restored);
+            }
+            return exist;
+        } else {
+            Member member = Member.builder()
+                    .socialId(info.getId())
+                    .email(info.getEmail() != null
+                            ? info.getEmail()
+                            : UUID.randomUUID() + "@socialUser.com")
+                    .nickname(generateUniqueRandomNickname())
+                    .role(Role.USER)
+                    .deleted(false)
+                    .deletedAt(null)
+                    .socialType("GOOGLE")
+                    .oauthRefreshToken(info.getRefreshToken())
                     .build();
             memberRepository.save(member);
             slackNotificationService.sendMemberRegistrationMessage(member.getId());
@@ -254,7 +317,7 @@ public class MemberService {
         // 카카오 소셜 계정의 경우 앱 연결 해제 진행
         if ("KAKAO".equalsIgnoreCase(member.getSocialType())) {
             try {
-                oAuthService.unlinkKakaoUser(member.getSocialId());
+                kakaoService.unlinkKakaoUser(member.getSocialId());
             } catch (Exception e) {
                 throw new InternalServerException(ErrorStatus.FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION.getMessage() + e.getMessage());
             }

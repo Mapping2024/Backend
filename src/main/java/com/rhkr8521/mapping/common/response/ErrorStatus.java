@@ -32,7 +32,7 @@ public enum ErrorStatus {
     CANT_ACCESS_BLOCK_USER_MEMO_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자의 메모는 조회할 수 없습니다."),
     ALREADY_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"이미 차단한 사용자입니다."),
     NOT_BLOCK_USER_EXCEPTION(HttpStatus.BAD_REQUEST,"차단한 사용자가 아닙니다."),
-    MISSING_APPLE_AUTHORIZATION_CODE_EXCEPTION(HttpStatus.BAD_REQUEST,"Apple Authorization Code가 입력되지 않았습니다."),
+    MISSING_OAUTH2_AUTHORIZATION_CODE_EXCEPTION(HttpStatus.BAD_REQUEST,"OAuth2 Authorization Code가 입력되지 않았습니다."),
 
     /**
      * 401 UNAUTHORIZED
