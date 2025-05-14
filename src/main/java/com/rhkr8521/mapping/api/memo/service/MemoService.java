@@ -518,9 +518,17 @@ public class MemoService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()))
                 .getId();
 
+        // 차단한 사용자 목록
+        List<Long> blockedIds = memberService.getBlockedUserIds(userId);
+        // 내가 댓글 단 메모 목록
         List<Memo> memos = commentRepository.findDistinctMemoByMemberId(userId);
 
-        return memos.stream()
+        // 메모 필터링
+        List<Memo> filtered = memos.stream()
+                .filter(memo -> blockedIds.isEmpty() || !blockedIds.contains(memo.getMember().getId()))
+                .toList();
+
+        return filtered.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -532,9 +540,17 @@ public class MemoService {
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()))
                 .getId();
 
+        // 차단한 사용자 목록
+        List<Long> blockedIds = memberService.getBlockedUserIds(userId);
+        // 좋아요한 메모 목록
         List<Memo> likedMemos = memoLikeRepository.findMemosByMemberId(userId);
 
-        return likedMemos.stream()
+        // 메모 필터링
+        List<Memo> filtered = likedMemos.stream()
+                .filter(memo -> blockedIds.isEmpty() || !blockedIds.contains(memo.getMember().getId()))
+                .toList();
+
+        return filtered.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
