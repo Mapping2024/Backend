@@ -319,22 +319,34 @@ public class MemberService {
             try {
                 kakaoService.unlinkKakaoUser(member.getSocialId());
             } catch (Exception e) {
-                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION.getMessage() + e.getMessage());
+                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + e.getMessage());
             }
         }
         // 애플 소셜 계정의 경우 앱 연결 해제 진행 (리프레시 토큰을 통해 엑세스 토큰 재발급)
         else if ("APPLE".equalsIgnoreCase(member.getSocialType())) {
             String appleRefreshToken = member.getOauthRefreshToken();
             if (appleRefreshToken == null || appleRefreshToken.isEmpty()) {
-                throw new InternalServerException(ErrorStatus.MISSING_APPLE_OAUTH_REFRESH_TOKEN.getMessage());
+                throw new InternalServerException(ErrorStatus.MISSING_OAUTH_REFRESH_TOKEN.getMessage());
             }
             try {
                 String appleAccessToken = appleService.refreshAppleAccessToken(appleRefreshToken);
                 appleService.unlinkAppleUser(appleAccessToken);
             } catch (Exception e) {
-                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_APPLE_OAUTH_EXCEPTION.getMessage() + e.getMessage());
+                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + e.getMessage());
             }
         }
+        // 구글 소셜 계정의 경우 앱 연결 해제 진행 (리프레시 토큰을 통해 엑세스 토큰 재발급)
+//        else if("GOOGLE".equalsIgnoreCase(member.getSocialType())) {
+//            String googleRefreshToken = member.getOauthRefreshToken();
+//            if (googleRefreshToken == null || googleRefreshToken.isEmpty()) {
+//                throw new InternalServerException(ErrorStatus.MISSING_OAUTH_REFRESH_TOKEN.getMessage());
+//            }
+//            try{
+//
+//            }catch (Exception e){
+//                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + e.getMessage());
+//            }
+//        }
 
         // 논리적 삭제 처리 및 개인정보 익명화
         Member updatedMember = member.markAsDeleted();
