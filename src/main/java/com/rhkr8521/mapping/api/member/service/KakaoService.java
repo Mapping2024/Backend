@@ -145,7 +145,7 @@ public class KakaoService {
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException(ErrorStatus.FAIL_UNLINK_KAKAO_OAUTH_EXCEPTION.getMessage() + response.getBody());
+            throw new RuntimeException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + response.getBody());
         }
     }
 }
