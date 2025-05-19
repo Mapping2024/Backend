@@ -40,7 +40,7 @@ public class SwaggerConfig {
         SecurityRequirement refreshTokenRequirement = new SecurityRequirement().addList(refreshTokenHeader);
 
         Server server = new Server();
-        server.setUrl("http://localhost:8080");
+        server.setUrl("https://api.mapping.kro.kr");
 
         return new OpenAPI()
                 .info(new Info()

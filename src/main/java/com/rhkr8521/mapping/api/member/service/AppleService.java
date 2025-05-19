@@ -243,7 +243,7 @@ public class AppleService {
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new InternalServerException(ErrorStatus.FAIL_UNLINK_APPLE_OAUTH_EXCEPTION.getMessage() + response.getBody());
+            throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + response.getBody());
         }
     }
 }
