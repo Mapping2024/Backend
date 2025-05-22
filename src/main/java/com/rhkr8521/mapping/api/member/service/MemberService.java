@@ -332,21 +332,24 @@ public class MemberService {
                 String appleAccessToken = appleService.refreshAppleAccessToken(appleRefreshToken);
                 appleService.unlinkAppleUser(appleAccessToken);
             } catch (Exception e) {
-                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + e.getMessage());
+                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage());
             }
         }
         // 구글 소셜 계정의 경우 앱 연결 해제 진행 (리프레시 토큰을 통해 엑세스 토큰 재발급)
-//        else if("GOOGLE".equalsIgnoreCase(member.getSocialType())) {
-//            String googleRefreshToken = member.getOauthRefreshToken();
-//            if (googleRefreshToken == null || googleRefreshToken.isEmpty()) {
-//                throw new InternalServerException(ErrorStatus.MISSING_OAUTH_REFRESH_TOKEN.getMessage());
-//            }
-//            try{
-//
-//            }catch (Exception e){
-//                throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage() + e.getMessage());
-//            }
-//        }
+        else if ("GOOGLE".equalsIgnoreCase(member.getSocialType())) {
+            String googleRefreshToken = member.getOauthRefreshToken();
+            // 리프레시토큰이 없으면 서버 탈퇴 로직만 수행
+            if (googleRefreshToken != null && !googleRefreshToken.isEmpty()) {
+                try {
+                    // 리프레시 토큰으로 액세스토큰 재발급
+                    String accessToken = googleService.refreshGoogleAccessToken(googleRefreshToken);
+                    // 구글에 revoke 요청
+                    googleService.unlinkGoogleUser(accessToken);
+                } catch (Exception e) {
+                    throw new InternalServerException(ErrorStatus.FAIL_UNLINK_OAUTH2_EXCEPTION.getMessage());
+                }
+            }
+        }
 
         // 논리적 삭제 처리 및 개인정보 익명화
         Member updatedMember = member.markAsDeleted();
