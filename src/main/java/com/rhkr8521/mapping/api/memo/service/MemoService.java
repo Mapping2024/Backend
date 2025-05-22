@@ -326,8 +326,8 @@ public class MemoService {
         memoRepository.save(deletedMemo);
     }
 
-    // 메모 수정
-    public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
+    // (구)메모 수정
+    public void exUpdateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
                            List<MultipartFile> newImages, List<String> deleteImageUrls,
                            HttpServletRequest request) throws IOException {
 
@@ -409,6 +409,128 @@ public class MemoService {
                     .category(memoRequest.getCategory())
                     .likeCnt(memo.getLikeCnt())
                     .hateCnt(memo.getHateCnt())
+                    .lastModifyIp(clientIp)
+                    .createIp(memo.getCreateIp())
+                    .images(new ArrayList<>(memo.getImages()))
+                    .modify(true)
+                    .build();
+
+            // 삭제할 이미지 처리
+            if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
+                List<MemoImage> imagesToRemove = memo.getImages().stream()
+                        .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
+                        .toList();
+
+                for (MemoImage image : imagesToRemove) {
+                    // S3에서 이미지 삭제
+                    s3Service.deleteFile(image.getImageUrl());
+                    // 메모에서 이미지 제거
+                    updatedMemo.getImages().remove(image);
+                }
+            }
+
+            // 새로운 이미지 업로드 및 추가
+            if (newImages != null && !newImages.isEmpty()) {
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
+                for (String url : imageUrls) {
+                    MemoImage image = MemoImage.builder()
+                            .imageUrl(url)
+                            .memo(updatedMemo)
+                            .build();
+                    updatedMemo.getImages().add(image);
+                }
+            }
+
+            memoRepository.save(updatedMemo);
+        }
+    }
+
+    // (신)메모 수정
+    @Transactional
+    public void updateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
+                           List<MultipartFile> newImages, List<String> deleteImageUrls,
+                           HttpServletRequest request) throws IOException {
+
+        // 해당 유저를 찾을 수 없을 경우 예외처리
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.USER_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 해당 메모를 찾을 수 없을 경우 예외처리
+        Memo memo = memoRepository.findById(memoId)
+                .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
+
+        // 메모 작성자 확인
+        if (!memo.getMember().getId().equals(userId)) {
+            throw new BadRequestException(ErrorStatus.MEMO_WRITER_NOT_SAME_USER_EXCEPTION.getMessage());
+        }
+
+        // 접속 IP 추출
+        String clientIp = extractClientIp(request);
+
+        // 개인 메모일 경우 필터링 해제
+        if(memoRequest.isSecret()){
+            // 메모 정보 업데이트
+            Memo updatedMemo = Memo.builder()
+                    .id(memo.getId())
+                    .member(memo.getMember())
+                    .title(memo.getTitle())
+                    .content(memo.getContent())
+                    .lat(memo.getLat())
+                    .lng(memo.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(memo.getLikeCnt())
+                    .hateCnt(memo.getHateCnt())
+                    .lastModifyIp(clientIp)
+                    .createIp(memo.getCreateIp())
+                    .secret(memoRequest.isSecret())
+                    .images(new ArrayList<>(memo.getImages()))
+                    .modify(true)
+                    .build();
+
+            // 삭제할 이미지 처리
+            if (deleteImageUrls != null && !deleteImageUrls.isEmpty()) {
+                List<MemoImage> imagesToRemove = memo.getImages().stream()
+                        .filter(image -> deleteImageUrls.contains(image.getImageUrl()))
+                        .toList();
+
+                for (MemoImage image : imagesToRemove) {
+                    // S3에서 이미지 삭제
+                    s3Service.deleteFile(image.getImageUrl());
+                    // 메모에서 이미지 제거
+                    updatedMemo.getImages().remove(image);
+                }
+            }
+
+            // 새로운 이미지 업로드 및 추가
+            if (newImages != null && !newImages.isEmpty()) {
+                List<String> imageUrls = s3Service.uploadMemoImages(String.valueOf(userId), newImages);
+                for (String url : imageUrls) {
+                    MemoImage image = MemoImage.builder()
+                            .imageUrl(url)
+                            .memo(updatedMemo)
+                            .build();
+                    updatedMemo.getImages().add(image);
+                }
+            }
+
+            memoRepository.save(updatedMemo);
+        }else{
+            // 제목과 내용에 대해 비속어 검증
+            ProfanityResponseDTO titleResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getTitle());
+            ProfanityResponseDTO contentResponse = profanityDetectionService.checkTextAndSave(member, memoRequest.getContent());
+
+            // 메모 정보 업데이트
+            Memo updatedMemo = Memo.builder()
+                    .id(memo.getId())
+                    .member(memo.getMember())
+                    .title(titleResponse.getCensoredText())
+                    .content(contentResponse.getCensoredText())
+                    .lat(memo.getLat())
+                    .lng(memo.getLng())
+                    .category(memoRequest.getCategory())
+                    .likeCnt(memo.getLikeCnt())
+                    .hateCnt(memo.getHateCnt())
+                    .secret(memoRequest.isSecret())
                     .lastModifyIp(clientIp)
                     .createIp(memo.getCreateIp())
                     .images(new ArrayList<>(memo.getImages()))

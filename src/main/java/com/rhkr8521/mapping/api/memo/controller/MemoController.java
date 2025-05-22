@@ -179,7 +179,60 @@ public class MemoController {
     }
 
     @Operation(
-            summary = "메모 수정 API",
+            summary = "(신)메모 수정 API",
+            description = "기존 메모를 수정합니다. 삭제할 이미지 URL과 새로운 이미지를 함께 처리합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메모 수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 정보가 입력되지 않았습니다."),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 메모를 찾을 수 없습니다."),
+    })
+    @PutMapping(value = "/modify/{memoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> updateMemo(
+            @PathVariable Long memoId,
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestParam("category") String category,
+            @RequestParam("secret") boolean secret,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "deleteImageUrls", required = false) List<String> deleteImageUrls,
+            HttpServletRequest request
+    ) throws IOException {
+
+        // 필수 입력 값 누락 체크
+        if (isNullOrEmpty(title) ||
+                isNullOrEmpty(content) ||
+                isNullOrEmpty(category) ||
+                memoId == null) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_CONTENT_MISSING_EXCEPTION.getMessage());
+        }
+
+        // 이미지 파일 검증
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile image : images) {
+                if (isImageFile(image)) {
+                    throw new BadRequestException(ErrorStatus.NOT_ALLOW_IMG_MIME.getMessage());
+                }
+            }
+        }
+
+        MemoCreateRequestDTO memoUpdateRequestDTO = MemoCreateRequestDTO.builder()
+                .title(title)
+                .content(content)
+                .category(category)
+                .secret(secret)
+                .build();
+
+        Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
+
+        memoService.updateMemo(memoId, userId, memoUpdateRequestDTO, images, deleteImageUrls, request);
+
+        return ApiResponse.success_only(SuccessStatus.UPDATE_MEMO_SUCCESS);
+    }
+
+    @Operation(
+            summary = "(구)메모 수정 API",
             description = "기존 메모를 수정합니다. 삭제할 이미지 URL과 새로운 이미지를 함께 처리합니다."
     )
     @ApiResponses({
@@ -224,7 +277,7 @@ public class MemoController {
 
         Long userId = memberService.getUserIdByEmail(userDetails.getUsername());
 
-        memoService.updateMemo(memoId, userId, memoUpdateRequestDTO, images, deleteImageUrls, request);
+        memoService.exUpdateMemo(memoId, userId, memoUpdateRequestDTO, images, deleteImageUrls, request);
 
         return ApiResponse.success_only(SuccessStatus.UPDATE_MEMO_SUCCESS);
     }
