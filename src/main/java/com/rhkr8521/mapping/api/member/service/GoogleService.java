@@ -28,6 +28,7 @@ public class GoogleService {
     private String googleRedirectUri;
 
     private static final String TOKEN_URL    = "https://oauth2.googleapis.com/token";
+    private static final String REVOKE_URL   = "https://oauth2.googleapis.com/revoke";
     private static final String USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -80,5 +81,44 @@ public class GoogleService {
                 .email(userJson.get("email").asText())
                 .refreshToken(tokenDto.getRefresh_token())
                 .build();
+    }
+
+    // Google RefreshToken -> AccessToken 재발급 로직
+    public String refreshGoogleAccessToken(String refreshToken) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type",    "refresh_token");
+        params.add("client_id",     googleClientId);
+        params.add("client_secret", googleClientSecret);
+        params.add("refresh_token", refreshToken);
+
+        HttpEntity<MultiValueMap<String, String>> request =
+                new HttpEntity<>(params, headers);
+
+        ResponseEntity<GoogleTokenResponseDTO> response =
+                restTemplate.postForEntity(TOKEN_URL, request, GoogleTokenResponseDTO.class);
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            log.error("Google AccessToken 재발급 실패: status={}", response.getStatusCode());
+            throw new Exception("Google AccessToken 재발급 오류");
+        }
+        return response.getBody().getAccess_token();
+    }
+
+    // Google OAuth2 맵핑 해제
+    public void unlinkGoogleUser(String accessToken) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        String url = REVOKE_URL + "?token=" + accessToken;
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.error("Google 계정 연결 해제 실패: status={}", response.getStatusCode());
+            throw new Exception("Google 계정 연결 해제 오류");
+        }
     }
 }
