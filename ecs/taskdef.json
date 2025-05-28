@@ -1,0 +1,29 @@
+{
+  "family": "Mapping-Backend-Task",
+  "executionRoleArn": "arn:aws:iam::663812281133:role/ecsTaskExecutionRole",
+  "networkMode": "bridge",
+  "containerDefinitions": [
+    {
+      "name": "mapping_backend",
+      "image": "",
+      "cpu": 819,
+      "memory": 819,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/Mapping-Backend-Task",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
