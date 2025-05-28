@@ -89,10 +89,35 @@ jobs:
 
     steps:
 
-      - name: Create ECS task definition file
+      - name: Create ECS taskdef skeleton
         run: |
-          mkdir -p ecs
-          echo "${{ secrets.ECS_TASKDEF_JSON }}" > ecs/taskdef.json
+          cat << 'EOF' > ecs/taskdef.json
+          {
+            "family": "Mapping-Backend-Task",
+            "executionRoleArn": "arn:aws:iam::663812281133:role/ecsTaskExecutionRole",
+            "networkMode": "bridge",
+            "containerDefinitions": [
+              {
+                "name": "mapping_backend",
+                "image": "",
+                "cpu": 819,
+                "memory": 819,
+                "portMappings": [
+                  { "containerPort": 8080, "hostPort": 80, "protocol": "tcp" }
+                ],
+                "essential": true,
+                "logConfiguration": {
+                  "logDriver": "awslogs",
+                  "options": {
+                    "awslogs-group": "/ecs/Mapping-Backend-Task",
+                    "awslogs-region": "ap-northeast-2",
+                    "awslogs-stream-prefix": "ecs"
+                  }
+                }
+              }
+            ]
+          }
+          EOF
     
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
