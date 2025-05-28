@@ -88,6 +88,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Create ECS task definition file
+        run: |
+          mkdir -p ecs
+          echo "${{ secrets.ECS_TASKDEF_JSON }}" > ecs/taskdef.json
+    
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
