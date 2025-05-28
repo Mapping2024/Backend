@@ -16,6 +16,12 @@
         }
       ],
       "essential": true,
+      "secrets": [
+        {
+          "name": "APPLE_AUTH_KEY_P8",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:663812281133:secret:apple-auth-key-p8-t4t0DO"
+        }
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
