@@ -12,7 +12,7 @@ env:
   ECR_REPOSITORY: mapping_backend       # ECR 리포지토리 이름
   ECS_CLUSTER: Mapping-ECS                 # ECS 클러스터 이름
   ECS_SERVICE: Mapping-Backend-Task-service-vl882nm5 # ECS 서비스 이름
-  ECS_TASK_DEFINITION: .ecs/taskdef.json   # 태스크 정의 JSON 파일 경로
+  ECS_TASK_DEFINITION: ecs/taskdef.json   # 태스크 정의 JSON 파일 경로
   CONTAINER_NAME: mapping_backend           # taskdef.json 내 컨테이너 이름
 
 permissions:
