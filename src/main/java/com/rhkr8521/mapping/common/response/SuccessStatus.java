@@ -12,6 +12,7 @@ public enum SuccessStatus {
     /**
      * 200
      */
+    SEND_SERVER_OK(HttpStatus.OK, "서버 응답 성공"),
     SEND_OAUTH2_ACCESSTOKEN_SUCCESS(HttpStatus.OK,"OAuth2 인가코드 발급 성공"),
     SEND_LOGIN_SUCCESS(HttpStatus.OK, "로그인 성공"),
     SEND_REISSUE_TOKEN_SUCCESS(HttpStatus.OK,"토큰 재발급 성공"),
