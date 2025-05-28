@@ -12,7 +12,7 @@ env:
   ECR_REPOSITORY: mapping_backend       # ECR 리포지토리 이름
   ECS_CLUSTER: Mapping-ECS                 # ECS 클러스터 이름
   ECS_SERVICE: Mapping-Backend-Task-service-vl882nm5 # ECS 서비스 이름
-  ECS_TASK_DEFINITION: ecs/taskdef.json   # 태스크 정의 JSON 파일 경로
+  ECS_TASK_DEFINITION: .ecs/taskdef.json   # 태스크 정의 JSON 파일 경로
   CONTAINER_NAME: mapping_backend           # taskdef.json 내 컨테이너 이름
 
 permissions:
@@ -89,35 +89,8 @@ jobs:
 
     steps:
 
-      - name: Create ECS taskdef skeleton
-        run: |
-          cat << 'EOF' > ecs/taskdef.json
-          {
-            "family": "Mapping-Backend-Task",
-            "executionRoleArn": "arn:aws:iam::663812281133:role/ecsTaskExecutionRole",
-            "networkMode": "bridge",
-            "containerDefinitions": [
-              {
-                "name": "mapping_backend",
-                "image": "",
-                "cpu": 819,
-                "memory": 819,
-                "portMappings": [
-                  { "containerPort": 8080, "hostPort": 80, "protocol": "tcp" }
-                ],
-                "essential": true,
-                "logConfiguration": {
-                  "logDriver": "awslogs",
-                  "options": {
-                    "awslogs-group": "/ecs/Mapping-Backend-Task",
-                    "awslogs-region": "ap-northeast-2",
-                    "awslogs-stream-prefix": "ecs"
-                  }
-                }
-              }
-            ]
-          }
-          EOF
+      - name: Checkout code    # ← 이 줄을 추가
+        uses: actions/checkout@v4
     
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
