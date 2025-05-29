@@ -80,6 +80,7 @@ jobs:
           ECR_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
           docker build -t $ECR_URI:$IMAGE_TAG .
           docker push $ECR_URI:$IMAGE_TAG
+          docker push $ECR_URI:latest
           echo "image=$ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy:
