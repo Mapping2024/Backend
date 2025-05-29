@@ -27,6 +27,9 @@ public class S3Service {
     @Value("${cloud.aws.s3.domain}")
     private String domain;
 
+    @Value("${cloud.aws.api.domain}")
+    private String apiDomain;
+
     public List<String> uploadMemoImages(String userIdentifier, List<MultipartFile> files) throws IOException {
         String dir = "memo-images";
         List<String> imageUrls = new ArrayList<>();
@@ -61,7 +64,7 @@ public class S3Service {
             // AWS S3
             //imageUrls.add(domain + "/" + fileKey);
             // rhkr8521-Bucket
-            imageUrls.add(domain + "/" + bucketName + "/" + fileKey);
+            imageUrls.add(apiDomain + "/" + bucketName + "/" + fileKey);
         }
 
         return imageUrls;
@@ -93,16 +96,16 @@ public class S3Service {
         // AWS S3
         //return domain + "/" + fileKey;
         // rhkr8521-Bucket
-        return domain + "/" + bucketName + "/" + fileKey;
+        return apiDomain + "/" + bucketName + "/" + fileKey;
 
     }
 
     public void deleteFile(String imageUrl) {
-        if (imageUrl != null && imageUrl.startsWith(domain)) {
+        if (imageUrl != null && imageUrl.startsWith(apiDomain)) {
             // AWS S3
             //String fileKey = imageUrl.replace(domain + "/", "");
             // rhkr8521-Bucket
-            String fileKey = imageUrl.replace(domain + "/" + bucketName + "/", "");
+            String fileKey = imageUrl.replace(apiDomain + "/" + bucketName + "/", "");
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
                     .key(fileKey)
