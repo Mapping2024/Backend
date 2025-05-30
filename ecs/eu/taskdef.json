@@ -1,0 +1,37 @@
+{
+  "family": "mapping-backend-task-2",
+  "executionRoleArn": "arn:aws:iam::663812281133:role/ecsTaskExecutionRole",
+  "networkMode": "bridge",
+  "containerDefinitions": [
+    {
+      "name": "mapping_backend",
+      "image": "",
+      "cpu": 819,
+      "memory": 1843,
+      "portMappings": [
+          {
+              "name": "mapping_backend-8080-tcp",
+              "containerPort": 8080,
+              "hostPort": 8080,
+              "protocol": "tcp",
+              "appProtocol": "http"
+          }
+      ],
+      "essential": true,
+      "secrets": [
+        {
+          "name": "apple-auth-key-p8",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:663812281133:secret:apple-auth-key-p8-t4t0DO"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/mapping-backend-task-2",
+          "awslogs-region": "eu-central-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
