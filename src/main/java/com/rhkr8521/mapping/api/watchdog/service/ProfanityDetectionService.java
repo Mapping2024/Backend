@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -47,6 +48,7 @@ public class ProfanityDetectionService {
     }
 
     // 검증 결과에 따라 ProfanityDetect 엔티티를 생성 및 저장
+    @Transactional
     public void saveProfanityDetect(Member member, String originalText, ProfanityResponseDTO response) {
         String detectedWordsStr = String.join(",", response.getDetectedWords());
 
@@ -61,6 +63,7 @@ public class ProfanityDetectionService {
     }
 
     // 멤버 정보를 포함해 텍스트 검증 후, 응답이 true일 경우 DB 저장까지 처리하는 메서드
+    @Transactional
     public ProfanityResponseDTO checkTextAndSave(Member member, String text) {
         ProfanityResponseDTO response = checkText(text);
         if (response.isContainsProfanity()) {
