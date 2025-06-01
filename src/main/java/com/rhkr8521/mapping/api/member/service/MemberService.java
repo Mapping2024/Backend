@@ -118,7 +118,8 @@ public class MemberService {
 
 
     // 새로운 카카오 사용자 등록
-    private Member registerNewKakaoUser(KakaoUserInfoDTO kakaoUserInfo) {
+    @Transactional
+    protected Member registerNewKakaoUser(KakaoUserInfoDTO kakaoUserInfo) {
         Member member = Member.builder()
                 .socialId(kakaoUserInfo.getId())
                 .email(UUID.randomUUID() + "@socialUser.com")

@@ -44,6 +44,7 @@ public class MemoService {
     private final ProfanityDetectionService profanityDetectionService;
 
     // 메모 생성
+    @Transactional
     public void createMemo(Long userId, MemoCreateRequestDTO memoRequest, List<MultipartFile> images, HttpServletRequest request) throws IOException {
 
         // 해당 유저를 찾을 수 없을 경우 예외처리
@@ -156,6 +157,7 @@ public class MemoService {
     }
 
     // 전체 메모 조회(공개 + 비공개)
+    @Transactional(readOnly = true)
     public List<MemoTotalListResponseDTO> getMemosWithinRadius(double lat, double lng, double km, UserDetails userDetails) {
         List<Memo> allMemos = memoRepository.findMemosWithinRadius(lat, lng, km);
         final List<Long> blockedIds;
@@ -198,6 +200,7 @@ public class MemoService {
     }
 
     // 메모 상세 조회
+    @Transactional(readOnly = true)
     public MemoDetailResponseDTO getMemoDetail(Long memoId, UserDetails userDetails) {
         Memo memo = memoRepository.findById(memoId)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.MEMO_NOTFOUND_EXCEPTION.getMessage()));
@@ -270,6 +273,7 @@ public class MemoService {
     }
 
     // 내가 작성한 메모 조회
+    @Transactional(readOnly = true)
     public List<MyMemoListResponseDTO> getMyMemoList(Long userId){
         List<Memo> myMemos = memoRepository.findByMemberIdAndIsDeletedFalseOrderByCreatedAtDesc(userId);
 
@@ -327,6 +331,7 @@ public class MemoService {
     }
 
     // (구)메모 수정
+    @Transactional
     public void exUpdateMemo(Long memoId, Long userId, MemoCreateRequestDTO memoRequest,
                            List<MultipartFile> newImages, List<String> deleteImageUrls,
                            HttpServletRequest request) throws IOException {
