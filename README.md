@@ -12,7 +12,7 @@
 <!-- - Project Description
 - Project Background
 - Tech Stack -->
-- Architecture Structure
+- Architecture Structure 
 <!--
 
 - - -
