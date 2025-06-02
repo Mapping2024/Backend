@@ -27,7 +27,7 @@
 -->
 - - -
 ### ✔️ Architecture Structure
-<img width="801" alt="image" src="https://github.com/user-attachments/assets/2ba316f9-b051-4042-a280-ddce13339fca">
+<img width="801" alt="image" src="https://github.com/user-attachments/assets/a09c17f7-b96b-48a9-84c3-008f54261eda">
 
 <!--
 ## Flow Chart
