@@ -97,28 +97,6 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
-      
-      - name: Stop running ECS tasks [로드밸런서 미적용시에 임시로 사용]
-        run: |
-          CLUSTER=${{ env.ECS_CLUSTER }}
-          SERVICE=${{ env.ECS_SERVICE }}
-          echo "Stopping RUNNING tasks in $CLUSTER / $SERVICE..."
-          TASK_ARNS=$(aws ecs list-tasks \
-            --cluster $CLUSTER \
-            --service-name $SERVICE \
-            --desired-status RUNNING \
-            --query 'taskArns[]' \
-            --output text)
-          if [ -z "$TASK_ARNS" ]; then
-            echo "No running tasks to stop."
-          else
-            for TASK in $TASK_ARNS; do
-              echo "Stopping task $TASK"
-              aws ecs stop-task --cluster $CLUSTER --task $TASK
-            done
-            # 기존 배포가 안정화될 때까지 대기
-            aws ecs wait services-stable --cluster $CLUSTER --services $SERVICE
-          fi
 
       - name: Render new Task Definition
         id: render-task-def
@@ -135,3 +113,5 @@ jobs:
           service:                    ${{ env.ECS_SERVICE }}
           cluster:                    ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+          # 로드밸런스 미 적용 상태일때 임시로 사용
+          force-new-deployment: true
