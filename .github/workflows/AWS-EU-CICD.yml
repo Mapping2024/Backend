@@ -97,8 +97,8 @@ jobs:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
-
-      - name: Stop running ECS tasks]
+      
+      - name: Stop running ECS tasks [로드밸런서 미적용시에 임시로 사용]
         run: |
           CLUSTER=${{ env.ECS_CLUSTER }}
           SERVICE=${{ env.ECS_SERVICE }}
