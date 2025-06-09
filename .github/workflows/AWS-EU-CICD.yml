@@ -83,53 +83,85 @@ jobs:
           echo "image=$ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy:
-    name: Deploy to ECS
-    needs: build-and-push
-    runs-on: ubuntu-latest
+      name: Deploy to ECS
+      needs: build-and-push
+      runs-on: ubuntu-latest
+  
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+  
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region:            ${{ env.AWS_REGION }}
+  
+        - name: Render new Task Definition
+          id: render-task-def
+          uses: aws-actions/amazon-ecs-render-task-definition@v1
+          with:
+            task-definition: ${{ env.ECS_TASK_DEFINITION }}
+            container-name:  ${{ env.CONTAINER_NAME }}
+            image:           ${{ needs.build-and-push.outputs.image }}
+  
+        - name: Write rendered task definition to file
+          run: |
+            printf '%s' "${{ steps.render-task-def.outputs.task-definition }}" > rendered-task-def.json
+  
+        - name: Register new Task Definition
+          id: register-task-def
+          run: |
+            NEW_ARN=$(aws ecs register-task-definition \
+              --cli-input-json file://rendered-task-def.json \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)
+            echo "new-task-def-arn=$NEW_ARN" >> $GITHUB_OUTPUT
+  
+        - name: Update ECS Service with force-new-deployment
+          run: |
+            aws ecs update-service \
+              --cluster "${{ env.ECS_CLUSTER }}" \
+              --service "${{ env.ECS_SERVICE }}" \
+              --task-definition "${{ steps.register-task-def.outputs.new-task-def-arn }}" \
+              --force-new-deployment \
+              --deployment-configuration maximumPercent=100,minimumHealthyPercent=0
+  
+        - name: Wait for service to stabilize
+          run: |
+            aws ecs wait services-stable \
+              --cluster "${{ env.ECS_CLUSTER }}" \
+              --services "${{ env.ECS_SERVICE }}"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # deploy:
+  #   name: Deploy to ECS
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
     
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region:            ${{ env.AWS_REGION }}
 
-      # 로드밸런서 미사용으로 인한 임시 사용
-      - name: Deploy new Task Definition via AWS CLI
-        run: |
-          CLUSTER="${{ env.ECS_CLUSTER }}"
-          SERVICE="${{ env.ECS_SERVICE }}"
-          TASK_DEF="${{ steps.render-task-def.outputs.task-definition }}"
-          echo "Updating ECS service with force-new-deployment and zero-healthy config..."
-          aws ecs update-service \
-            --cluster "$CLUSTER" \
-            --service "$SERVICE" \
-            --task-definition "$TASK_DEF" \
-            --force-new-deployment \
-            --deployment-configuration maximumPercent=100,minimumHealthyPercent=0
+  #     - name: Render new Task Definition
+  #       id: render-task-def
+  #       uses: aws-actions/amazon-ecs-render-task-definition@v1
+  #       with:
+  #         task-definition: ${{ env.ECS_TASK_DEFINITION }}
+  #         container-name:  ${{ env.CONTAINER_NAME }}
+  #         image:           ${{ needs.build-and-push.outputs.image }}
 
-      - name: Wait for service to stabilize
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ env.ECS_CLUSTER }}" \
-            --services "${{ env.ECS_SERVICE }}"
-
-      # - name: Render new Task Definition
-      #   id: render-task-def
-      #   uses: aws-actions/amazon-ecs-render-task-definition@v1
-      #   with:
-      #     task-definition: ${{ env.ECS_TASK_DEFINITION }}
-      #     container-name:  ${{ env.CONTAINER_NAME }}
-      #     image:           ${{ needs.build-and-push.outputs.image }}
-
-      # - name: Deploy new Task Definition to ECS
-      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-      #   with:
-      #     task-definition:            ${{ steps.render-task-def.outputs.task-definition }}
-      #     service:                    ${{ env.ECS_SERVICE }}
-      #     cluster:                    ${{ env.ECS_CLUSTER }}
-      #     wait-for-service-stability: true
+  #     - name: Deploy new Task Definition to ECS
+  #       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+  #       with:
+  #         task-definition:            ${{ steps.render-task-def.outputs.task-definition }}
+  #         service:                    ${{ env.ECS_SERVICE }}
+  #         cluster:                    ${{ env.ECS_CLUSTER }}
+  #         wait-for-service-stability: true
